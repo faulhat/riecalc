@@ -70,18 +70,3 @@ void yyerror(char *s) {
    fprintf(stderr, "Error: %s\n", s);
 }
 
-int main() {
-   Expr *expr = NULL;
-   yyparse(&expr);
-   if (expr != NULL) {
-      float result = eval_const_expr(expr);
-      print_expr(expr, stdout);
-      printf(" = %.2f\n", result);
-   }
-   else {
-      fprintf(stderr, "Error: could not parse an expr from input.\n");
-   }
-
-   return 0;
-}
-
