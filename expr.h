@@ -29,7 +29,7 @@ typedef struct {
 } BExpr;
 
 typedef enum {
-   NUMBER, UNARY, BINARY
+   NUMBER, VARIABLE, UNARY, BINARY
 } ExprType;
 
 typedef union {
@@ -44,6 +44,8 @@ struct Expr {
 };
 
 Expr *new_num_expr(float number);
+
+Expr *new_var_expr();
 
 Expr *new_unary(UOp op, Expr *inner);
 

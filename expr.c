@@ -11,6 +11,13 @@ Expr *new_num_expr(float number) {
    return expr;
 }
 
+Expr *new_var_expr() {
+   Expr *expr = malloc(sizeof(Expr));
+   expr->type = VARIABLE;
+   
+   return expr;
+}
+
 Expr *new_unary(UOp op, Expr *inner) {
    Expr *expr = malloc(sizeof(Expr));
    expr->type = UNARY;
@@ -73,6 +80,9 @@ float eval_const_expr(const Expr *expr) {
    case NUMBER:
       result = expr->val.number;
       break;
+   case VARIABLE:
+      fprintf(stderr, "Error: eval_const_expr cannot evaluate an expression containing a variable.\n");
+      exit(EXIT_FAILURE);
    }
 
    return result;
@@ -104,6 +114,9 @@ void print_expr(const Expr *expr, FILE *to) {
    case NUMBER:
       fprintf(to, "%.2f", expr->val.number);
       break;
+   case VARIABLE:
+      fprintf(to, "X");
+      break;
    }
 }
 
@@ -119,6 +132,7 @@ void destroy_expr(Expr *expr) {
       free(expr->val.binary);
       break;
    case NUMBER:
+   case VARIABLE:
       break;
    }
 

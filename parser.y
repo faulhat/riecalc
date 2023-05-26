@@ -9,7 +9,7 @@
 
 %parse-param {Expr **root}
 
-%token NUM
+%token NUM VAR
 
 %nonassoc UMINUS
 %left '+' '-'
@@ -58,6 +58,10 @@ expr:
       {
          *root = $$ = new_num_expr($1);
       }
+   | VAR
+      {
+         *root = $$ = new_var_expr();
+      }
    ;
 
 %%
@@ -70,8 +74,9 @@ int main() {
    Expr *expr = NULL;
    yyparse(&expr);
    if (expr != NULL) {
+      float result = eval_const_expr(expr);
       print_expr(expr, stdout);
-      printf(" = %.2f\n", eval_const_expr(expr));
+      printf(" = %.2f\n", result);
    }
    else {
       fprintf(stderr, "Error: could not parse an expr from input.\n");

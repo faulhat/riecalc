@@ -14,6 +14,10 @@
    return *yytext;
 }
 
+x|X {
+   return VAR;
+}
+
 . ;
 
 %%
