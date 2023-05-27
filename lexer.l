@@ -1,6 +1,6 @@
 %{
    #include "expr.h"
-   #include "parser.tab.h"
+   #include "parser.h"
 %}
 
 %%
@@ -18,7 +18,12 @@ x|X {
    return VAR;
 }
 
-. ;
+[ \t\n] ;
+
+. {
+   fprintf(stderr, "Cannot parse expr from input! Unrecognized char: %s\n", yytext);
+   exit(EXIT_FAILURE);
+}
 
 %%
 

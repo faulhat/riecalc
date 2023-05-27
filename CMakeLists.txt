@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 Project(MaxwellCalculator)
 
-
 find_program(LEX_EXE
     flex
 )
@@ -36,6 +35,7 @@ MACRO(LEX_FILE _filename)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
         COMMAND ${LEX_EXE}
+                --header-file=${_basename}.h
                 -o${_basename}.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         DEPENDS ${_filename} )
@@ -51,11 +51,14 @@ Add_Definitions(-DASMJIT_STATIC)
 Set(ASMJIT_DIR "asmjit/")
 Include("${ASMJIT_DIR}/CMakeLists.txt")
 
+Set(CMAKE_C_FLAGS "$(CMAKE_C_FLAGS) -g")
+Set(CMAKE_CXX_FLAGS "-g")
+
 Add_Executable(maxcalc
    parser.c
    lexer.c
    expr.c
-   main.cpp
+   varexpr.cpp 
    ${ASMJIT_SRC})
 
 Target_Link_Libraries(maxcalc ${ASMJIT_DEPS})
