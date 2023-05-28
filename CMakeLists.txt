@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-Project(MaxwellCalculator)
+Project(TommyGun)
 
 find_program(LEX_EXE
     flex
@@ -54,12 +54,12 @@ Include("${ASMJIT_DIR}/CMakeLists.txt")
 Set(CMAKE_C_FLAGS "$(CMAKE_C_FLAGS) -g")
 Set(CMAKE_CXX_FLAGS "-g")
 
-Add_Executable(maxcalc
+Add_Executable(tgcalc
    parser.c
    lexer.c
    expr.c
    varexpr.cpp 
    ${ASMJIT_SRC})
 
-Target_Link_Libraries(maxcalc ${ASMJIT_DEPS})
+Target_Link_Libraries(tgcalc ${ASMJIT_DEPS})
 

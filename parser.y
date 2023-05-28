@@ -1,5 +1,6 @@
 %{
    #include "expr.h"
+   #include "lexer.h"
 %}
 
 %union {

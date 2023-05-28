@@ -131,6 +131,17 @@ int main() {
       } while (next != '\n' && next != EOF);
 
       line = linestream.str();
+      bool input_null = true;
+      for (char ch: line) {
+         if (!isspace(ch)) {
+            input_null = false;
+         }
+      }
+
+      if (input_null) {
+         continue;
+      }
+
       yy_scan_string(line.c_str());
       
       yyparse(&expr);
