@@ -10,15 +10,20 @@
    return NUM;
 }
 
-[-+*/[\]()^] {
-   return *yytext;
+[-+*/[\]()^=] return *yytext;
+
+[A-Z][A-Za-z_]* {
+   yylval.sval = strdup(yytext);
+   return FUNC;
 }
 
-x|X {
-   return VAR;
-}
+x return VAR;
 
-[ \t\n] ;
+[ \t] ;
+
+[\n\r] return ENDL;
+
+<<EOF>> return ENDL;
 
 . {
    fprintf(stderr, "Cannot parse expr from input! Unrecognized char: %s\n", yytext);

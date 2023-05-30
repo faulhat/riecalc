@@ -6,21 +6,38 @@
 %union {
    float fval;
    Expr *expr;
+   char *sval;
 }
 
 %parse-param {Expr **root}
+%parse-param {char **funcname}
 
-%token NUM VAR
+%token NUM VAR FUNC ENDL
 
+%nonassoc '='
 %nonassoc UMINUS
 %left '+' '-'
 %left '*' '/'
 %left '^'
 
 %type <fval> NUM
-%type <expr> expr
+%type <sval> FUNC
+%type <expr> expr equation
 
 %%
+
+equation:
+     FUNC '=' expr ENDL 
+     {
+         *funcname = $1;
+         *root = $$ = $3;
+         return;
+     }
+   | expr ENDL
+     {
+         *root = $$ = $1;
+         return;
+     }
 
 expr:
      expr '+' expr
@@ -46,6 +63,10 @@ expr:
    | '-' expr %prec UMINUS
       {
          *root = $$ = new_unary(NEG, $2);
+      }
+   | FUNC '(' expr ')'
+      {
+         *root = $$ = new_apply($1, $3);
       }
    | '[' expr ']'
       {

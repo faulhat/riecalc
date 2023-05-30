@@ -28,14 +28,20 @@ typedef struct {
    Expr *rhs;
 } BExpr;
 
+typedef struct {
+   char *funcname;
+   Expr *arg;
+} Apply;
+
 typedef enum {
-   NUMBER, VARIABLE, UNARY, BINARY
+   NUMBER, VARIABLE, UNARY, BINARY, APPLY
 } ExprType;
 
 typedef union {
    float number;
    UExpr *unary;
    BExpr *binary;
+   Apply *apply;
 } ExprVal;
 
 struct Expr {
@@ -50,6 +56,8 @@ Expr *new_var_expr();
 Expr *new_unary(UOp op, Expr *inner);
 
 Expr *new_binary(BOp op, Expr *lhs, Expr *rhs);
+
+Expr *new_apply(char *funcname, Expr *arg);
 
 float eval_const_expr(const Expr *expr);
 

@@ -58,7 +58,7 @@ Add_Executable(tgcalc
    parser.c
    lexer.c
    expr.c
-   varexpr.cpp 
+   repl.cpp 
    ${ASMJIT_SRC})
 
 Target_Link_Libraries(tgcalc ${ASMJIT_DEPS})

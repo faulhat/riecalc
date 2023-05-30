@@ -28,6 +28,16 @@ Expr *new_unary(UOp op, Expr *inner) {
    return expr;
 }
 
+Expr *new_apply(char *funcname, Expr *arg) {
+   Expr *expr = malloc(sizeof(Expr));
+   expr->type = APPLY;
+   expr->val.apply = malloc(sizeof(Apply));
+   expr->val.apply->funcname = funcname;
+   expr->val.apply->arg = arg;
+
+   return expr;
+}
+
 Expr *new_binary(BOp op, Expr *lhs, Expr *rhs) {
    Expr *expr = malloc(sizeof(Expr));
    expr->type = BINARY;
@@ -80,7 +90,7 @@ float eval_const_expr(const Expr *expr) {
    case NUMBER:
       result = expr->val.number;
       break;
-   case VARIABLE:
+   default:
       fprintf(stderr, "Error: eval_const_expr cannot evaluate an expression containing a variable.\n");
       exit(EXIT_FAILURE);
    }
@@ -111,6 +121,11 @@ void print_expr(const Expr *expr, FILE *to) {
       print_expr(expr->val.binary->rhs, to);
       fprintf(to, ")");
       break;
+   case APPLY:
+      fprintf(to, "%s(", expr->val.apply->funcname);
+      print_expr(expr->val.apply->arg, to);
+      fprintf(to, ")");
+      break;
    case NUMBER:
       fprintf(to, "%.2f", expr->val.number);
       break;
@@ -130,6 +145,10 @@ void destroy_expr(Expr *expr) {
       destroy_expr(expr->val.binary->lhs);
       destroy_expr(expr->val.binary->rhs);
       free(expr->val.binary);
+      break;
+   case APPLY:
+      free(expr->val.apply->funcname);
+      destroy_expr(expr->val.apply->arg);
       break;
    case NUMBER:
    case VARIABLE:
