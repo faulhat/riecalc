@@ -52,6 +52,10 @@ expr:
       {
          *root = $$ = new_binary(MUL, $1, $3);
       }
+   | expr expr %prec '*'
+      {
+         *root = $$ = new_binary(MUL, $1, $2);
+      }
    | expr '/' expr
       {
          *root = $$ = new_binary(DIV, $1, $3);

@@ -193,6 +193,7 @@ int main() {
       }
       else {
          float result = (*fn)(0);
+         printf("\n> ");
          print_expr(expr, (FILE *)stdout);
          printf(" = %.4f\n\n", result);
       }     
