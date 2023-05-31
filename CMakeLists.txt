@@ -23,6 +23,7 @@ MACRO(YACC_FILE _filename)
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.h
         COMMAND ${YACC_EXE} -d
+                -Wcex
                 --output=${_basename}.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         DEPENDS ${_filename}

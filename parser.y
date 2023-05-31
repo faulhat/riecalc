@@ -1,6 +1,8 @@
 %{
    #include "expr.h"
    #include "lexer.h"
+
+   void yyerror(Expr **, char **, int *errc, const char ***errv, const char *s);
 %}
 
 %union {
@@ -19,6 +21,7 @@
 %token NUM VAR FUNC ENDL
 
 %nonassoc '='
+%nonassoc IS_EXPR
 %nonassoc UMINUS
 %left '+' '-'
 %left '*' '/'
@@ -26,7 +29,7 @@
 
 %type <fval> NUM
 %type <sval> FUNC
-%type <expr> expr equation
+%type <expr> isolate expr equation
 
 %%
 
@@ -56,7 +59,7 @@ expr:
       {
          *root = $$ = new_binary(MUL, $1, $3);
       }
-   | expr expr %prec '*'
+   | isolate isolate %prec '*'
       {
          *root = $$ = new_binary(MUL, $1, $2);
       }
@@ -72,7 +75,14 @@ expr:
       {
          *root = $$ = new_unary(NEG, $2);
       }
-   | FUNC '(' expr ')'
+   | isolate %prec IS_EXPR
+      {
+         *root = $$ = $1;
+      }
+   ;
+
+isolate:
+     FUNC '(' expr ')'
       {
          *root = $$ = new_apply($1, $3);
       }
@@ -92,7 +102,7 @@ expr:
       {
          *root = $$ = new_var_expr();
       }
-   ;
+   ; 
 
 %%
 
