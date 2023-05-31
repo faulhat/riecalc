@@ -99,6 +99,28 @@ void CompCtx::conv_binary(const BExpr *binary) {
    case DIV:
       cc.divss(y, top);
       break;
+   case POW:
+      {
+         x86::Mem top2 = cc.newStack(4, 16);
+         cc.movss(top2, x);
+         cc.movss(x, top);
+
+         cc.cvtss2sd(y, y);
+         cc.cvtss2sd(x, x);
+
+         InvokeNode *toPow;
+         cc.invoke(&toPow,
+                   (double (*)(double, double))&pow,
+                   FuncSignatureT<double, double, double>());
+         toPow->setArg(0, y);
+         toPow->setArg(1, x);
+         toPow->setRet(0, y);
+
+         cc.cvtsd2ss(y, y);
+         cc.movss(x, top2);
+      }
+
+      break;
    default:
       throw NotYetImplemented();
    }
