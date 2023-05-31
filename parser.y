@@ -31,12 +31,12 @@ equation:
      {
          *funcname = $1;
          *root = $$ = $3;
-         return;
+         return 0;
      }
    | expr ENDL
      {
          *root = $$ = $1;
-         return;
+         return 0;
      }
 
 expr:
