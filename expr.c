@@ -21,7 +21,7 @@ Expr *new_var_expr() {
 Expr *new_unary(UOp op, Expr *inner) {
    Expr *expr = malloc(sizeof(Expr));
    expr->type = UNARY;
-   expr->val.unary = malloc(sizeof(UExpr));
+   expr->val.unary = malloc(sizeof(Unary));
    expr->val.unary->op = op;
    expr->val.unary->inner = inner;
 
@@ -41,7 +41,7 @@ Expr *new_apply(char *funcname, Expr *arg) {
 Expr *new_binary(BOp op, Expr *lhs, Expr *rhs) {
    Expr *expr = malloc(sizeof(Expr));
    expr->type = BINARY;
-   expr->val.binary = malloc(sizeof(BExpr));
+   expr->val.binary = malloc(sizeof(Binary));
    expr->val.binary->op = op;
    expr->val.binary->lhs = lhs;
    expr->val.binary->rhs = rhs;

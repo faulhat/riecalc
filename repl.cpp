@@ -53,7 +53,7 @@ void CompCtx::conv_var_expr_rec(const Expr *expr) {
    }
 }
 
-void CompCtx::conv_unary(const UExpr *unary) {
+void CompCtx::conv_unary(const Unary *unary) {
    conv_var_expr_rec(unary->inner);
    switch (unary->op) {
    case NEG:
@@ -80,7 +80,7 @@ void CompCtx::conv_unary(const UExpr *unary) {
    }
 }
 
-void CompCtx::conv_binary(const BExpr *binary) {
+void CompCtx::conv_binary(const Binary *binary) {
    x86::Mem top = cc.newStack(4, 16);
 
    conv_var_expr_rec(binary->rhs);

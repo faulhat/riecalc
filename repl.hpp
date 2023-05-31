@@ -48,9 +48,9 @@ struct CompCtx {
    Func end();
 
 private:
-   void conv_unary(const UExpr *unary);
+   void conv_unary(const Unary *unary);
 
-   void conv_binary(const BExpr *binary);
+   void conv_binary(const Binary *binary);
 
    void conv_apply(const Apply *apply);
 };

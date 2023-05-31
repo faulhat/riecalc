@@ -12,7 +12,7 @@ typedef enum {
 typedef struct {
    UOp op;
    Expr *inner;
-} UExpr;
+} Unary;
 
 typedef enum {
    ADD = '+',
@@ -26,7 +26,7 @@ typedef struct {
    BOp op;
    Expr *lhs;
    Expr *rhs;
-} BExpr;
+} Binary;
 
 typedef struct {
    char *funcname;
@@ -39,8 +39,8 @@ typedef enum {
 
 typedef union {
    float number;
-   UExpr *unary;
-   BExpr *binary;
+   Unary *unary;
+   Binary *binary;
    Apply *apply;
 } ExprVal;
 
