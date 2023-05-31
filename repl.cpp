@@ -155,6 +155,8 @@ int main() {
 
    Table table;
    char *funcname;
+   int errc;
+   const char **errv;
    while (true) {
       linestream.str("");
 
@@ -183,7 +185,18 @@ int main() {
       yy_scan_string(line.c_str());
       
       funcname = nullptr;
-      yyparse(&expr, &funcname);
+      errc = 0;
+      yyparse(&expr, &funcname, &errc, &errv);
+      if (errc != 0) {
+         for (int i = 0; i < errc; i++) {
+            printf("Parser error: %s\n", errv[i]);
+         }
+         
+         printf("\n");
+         free(errv);
+         continue;
+      }
+
       Func fn = conv_var_expr(expr, rt, &table);
 
       if (funcname != nullptr) {

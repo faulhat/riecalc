@@ -11,6 +11,10 @@
 
 %parse-param {Expr **root}
 %parse-param {char **funcname}
+%parse-param {int *errc}
+%parse-param {const char ***errv}
+
+%define parse.error detailed
 
 %token NUM VAR FUNC ENDL
 
@@ -31,12 +35,12 @@ equation:
      {
          *funcname = $1;
          *root = $$ = $3;
-         return 0;
+         return *errc;
      }
    | expr ENDL
      {
          *root = $$ = $1;
-         return 0;
+         return *errc;
      }
 
 expr:
@@ -92,7 +96,15 @@ expr:
 
 %%
 
-void yyerror(char *s) {
-   fprintf(stderr, "Error: %s\n", s);
+void yyerror(Expr **, char **, int *errc, const char ***errv, const char *s) {
+   if (*errc == 0) {
+      *errv = malloc(sizeof(char *));
+   }
+   else {
+      *errv = realloc(*errv, (*errc + 1) * sizeof(char *));
+   }
+
+   *errv[*errc] = s;
+   ++*errc;
 }
 
