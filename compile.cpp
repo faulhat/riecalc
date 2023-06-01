@@ -12,7 +12,11 @@ NameResFail::NameResFail(const char *_name)
 {}
 
 const char *NameResFail::what() {
-   return "Function name could not be resolved!\n";
+   return "Name resolution failure.";
+}
+
+void NameResFail::report() {
+   printf("Function name could not be resolved.\nName given: %s\n\n", name.c_str());
 }
 
 CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)

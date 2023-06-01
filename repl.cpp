@@ -17,6 +17,7 @@ int main() {
    Table table;
    add_default_fns(table);
 
+   Func fn;
    char *funcname;
    int errc;
    const char **errv;
@@ -60,7 +61,13 @@ int main() {
          continue;
       }
 
-      Func fn = conv_var_expr(expr, rt, &table);
+      try {
+         fn = conv_var_expr(expr, rt, &table);
+      }
+      catch (NameResFail err) {
+         err.report();
+         continue;
+      }
 
       if (funcname != nullptr) {
          table[std::string(funcname)] = fn;

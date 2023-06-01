@@ -28,6 +28,7 @@ typedef struct {
    Expr *rhs;
 } Binary;
 
+/* Function application expression type */
 typedef struct {
    char *funcname;
    Expr *arg;
@@ -44,10 +45,13 @@ typedef union {
    Apply *apply;
 } ExprVal;
 
+/* Overarching expression type */
 struct Expr {
    ExprType type;
    ExprVal val;
 };
+
+/* Constructors for different types of expressions. */
 
 Expr *new_num_expr(double number);
 
@@ -59,10 +63,10 @@ Expr *new_binary(BOp op, Expr *lhs, Expr *rhs);
 
 Expr *new_apply(char *funcname, Expr *arg);
 
-double eval_const_expr(const Expr *expr);
-
+/* Pretty-prints an expression to the console. */
 void print_expr(const Expr *expr, FILE *to);
 
+/* Recursively frees parse tree. */
 void destroy_expr(Expr *expr);
 
 #endif

@@ -49,55 +49,6 @@ Expr *new_binary(BOp op, Expr *lhs, Expr *rhs) {
    return expr;
 }
 
-double eval_const_expr(const Expr *expr) {
-   double result = 0;
-   switch(expr->type) {
-   case UNARY:
-      result = eval_const_expr(expr->val.unary->inner);
-      switch(expr->val.unary->op) {
-      case NEG:
-         result = -result;
-         break;
-      case ABS:
-         result = abs(result);
-         break;
-      }
-      
-      break;
-   case BINARY:
-      result = eval_const_expr(expr->val.binary->lhs);
-      double rval = eval_const_expr(expr->val.binary->rhs);
-
-      switch (expr->val.binary->op) {
-      case ADD:
-         result += rval;
-         break;
-      case SUB:
-         result -= rval;
-         break;
-      case MUL:
-         result *= rval;
-         break;
-      case DIV:
-         result /= rval;
-         break;
-      case POW:
-         result = pow(result, rval);
-         break;
-      }
-      
-      break;
-   case NUMBER:
-      result = expr->val.number;
-      break;
-   default:
-      fprintf(stderr, "Error: eval_const_expr cannot evaluate an expression containing a variable.\n");
-      exit(EXIT_FAILURE);
-   }
-
-   return result;
-}
-
 void print_expr(const Expr *expr, FILE *to) {
    switch (expr->type) {
    case UNARY:

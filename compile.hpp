@@ -30,8 +30,13 @@ public:
    NameResFail(const char *name);
 
    virtual const char *what();
+
+   void report();
 };
 
+/* A class to store information for the compiler.
+ * Meant to be used for the compilation of a single expression.
+ */
 struct CompCtx {
    const Table *table;
    x86::Compiler cc;
@@ -42,8 +47,10 @@ struct CompCtx {
 
    CompCtx(JitRuntime &rt, CodeHolder &code, const Table *table);
 
+   /* Starts the recursive compilation of the expression. */
    void conv_var_expr_rec(const Expr *expr);
 
+   /* Cleans up the compiler and returns the compiled function */
    Func end();
 
 private:
@@ -54,8 +61,10 @@ private:
    void conv_apply(const Apply *apply);
 };
 
+/* Converts the provided expression into a callable function. */
 Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table);
 
+/* Adds common math functions into the given symbol table. */
 void add_default_fns(Table &table);
 
 #endif

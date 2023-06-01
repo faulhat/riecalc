@@ -24,6 +24,7 @@
 %nonassoc IS_EXPR
 %nonassoc UMINUS
 %left '+' '-'
+%right CMUL
 %left '*' '/'
 %left '^'
 
@@ -59,7 +60,7 @@ expr:
       {
          *root = $$ = new_binary(MUL, $1, $3);
       }
-   | isolate isolate %prec '*'
+   | isolate expr %prec CMUL
       {
          *root = $$ = new_binary(MUL, $1, $2);
       }
@@ -85,6 +86,10 @@ isolate:
      FUNC '(' expr ')'
       {
          *root = $$ = new_apply($1, $3);
+      }
+   | FUNC '(' ')'
+      {
+         *root = $$ = new_apply($1, new_num_expr(0));
       }
    | '[' expr ']'
       {
