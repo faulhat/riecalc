@@ -1,5 +1,5 @@
-#ifndef REPL_HPP
-#define REPL_HPP
+#ifndef COMPILE_HPP
+#define COMPILE_HPP
 
 extern "C" {
    #include "expr.h"
@@ -54,6 +54,8 @@ private:
 
    void conv_apply(const Apply *apply);
 };
+
+Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table);
 
 #endif
 

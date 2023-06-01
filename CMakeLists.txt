@@ -59,6 +59,7 @@ Add_Executable(riecalc
    parser.c
    lexer.c
    expr.c
+   compile.cpp
    repl.cpp 
    ${ASMJIT_SRC})
 
