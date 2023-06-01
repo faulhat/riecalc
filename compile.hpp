@@ -17,19 +17,18 @@ using namespace asmjit;
 
 typedef double (*Func)(double);
 
+/* A type for the REPL's symbol table */
 typedef std::unordered_map<std::string, Func> Table;
 
+/* Name resolution failure exception class.
+ * Thrown by the compiler when the user tries to use an unknown function.
+ */
 class NameResFail : public std::exception {
 public:
    std::string name;
 
    NameResFail(const char *name);
 
-   virtual const char *what();
-};
-
-class NotYetImplemented : public std::exception {
-public:
    virtual const char *what();
 };
 

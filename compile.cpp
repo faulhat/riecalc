@@ -15,10 +15,6 @@ const char *NameResFail::what() {
    return "Function name could not be resolved!\n";
 }
 
-const char *NotYetImplemented::what() {
-   return "Operation not yet implemented!\n";
-}
-
 CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)
    : rt(_rt), code(_code), cc(&_code), table(_table)
 {
@@ -115,8 +111,6 @@ void CompCtx::conv_binary(const Binary *binary) {
       }
 
       break;
-   default:
-      throw NotYetImplemented();
    }
 }
 
