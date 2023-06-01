@@ -38,7 +38,7 @@ typedef enum {
 } ExprType;
 
 typedef union {
-   float number;
+   double number;
    Unary *unary;
    Binary *binary;
    Apply *apply;
@@ -49,7 +49,7 @@ struct Expr {
    ExprVal val;
 };
 
-Expr *new_num_expr(float number);
+Expr *new_num_expr(double number);
 
 Expr *new_var_expr();
 
@@ -59,7 +59,7 @@ Expr *new_binary(BOp op, Expr *lhs, Expr *rhs);
 
 Expr *new_apply(char *funcname, Expr *arg);
 
-float eval_const_expr(const Expr *expr);
+double eval_const_expr(const Expr *expr);
 
 void print_expr(const Expr *expr, FILE *to);
 

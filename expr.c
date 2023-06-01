@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 
-Expr *new_num_expr(float number) {
+Expr *new_num_expr(double number) {
    Expr *expr = malloc(sizeof(Expr));
    expr->type = NUMBER;
    expr->val.number = number;
@@ -49,8 +49,8 @@ Expr *new_binary(BOp op, Expr *lhs, Expr *rhs) {
    return expr;
 }
 
-float eval_const_expr(const Expr *expr) {
-   float result = 0;
+double eval_const_expr(const Expr *expr) {
+   double result = 0;
    switch(expr->type) {
    case UNARY:
       result = eval_const_expr(expr->val.unary->inner);
@@ -66,7 +66,7 @@ float eval_const_expr(const Expr *expr) {
       break;
    case BINARY:
       result = eval_const_expr(expr->val.binary->lhs);
-      float rval = eval_const_expr(expr->val.binary->rhs);
+      double rval = eval_const_expr(expr->val.binary->rhs);
 
       switch (expr->val.binary->op) {
       case ADD:

@@ -6,7 +6,7 @@
 %}
 
 %union {
-   float fval;
+   double fval;
    Expr *expr;
    char *sval;
 }

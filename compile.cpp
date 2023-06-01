@@ -25,7 +25,7 @@ CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)
    x = cc.newXmm();
    y = cc.newXmm();
 
-   FuncNode *f = cc.addFunc(FuncSignatureT<float, float>());
+   FuncNode *f = cc.addFunc(FuncSignatureT<double, double>());
    f->setArg(0, x);
 }
 
@@ -42,13 +42,13 @@ void CompCtx::conv_var_expr_rec(const Expr *expr) {
       break;
    case NUMBER:
       {
-         x86::Mem numConst = cc.newFloatConst(ConstPoolScope::kLocal, expr->val.number);
-         cc.movss(y, numConst);
+         x86::Mem numConst = cc.newDoubleConst(ConstPoolScope::kLocal, expr->val.number);
+         cc.movsd(y, numConst);
       }
 
       break;
    case VARIABLE:
-      cc.movss(y, x);
+      cc.movsd(y, x);
       break;
    }
 }
@@ -59,14 +59,13 @@ void CompCtx::conv_unary(const Unary *unary) {
    case NEG:
       {
          x86::Mem top = cc.newStack(4, 16);
-         cc.movss(top, y);
+         cc.movsd(top, y);
          cc.xorps(y, y);
-         cc.subss(y, top);
+         cc.subsd(y, top);
       }
 
       break;
    case ABS:
-      cc.cvtss2sd(y, y);
       
       InvokeNode *toAbs;
       cc.invoke(&toAbs,
@@ -75,7 +74,6 @@ void CompCtx::conv_unary(const Unary *unary) {
       toAbs->setArg(0, y);
       toAbs->setRet(0, y);
 
-      cc.cvtsd2ss(y, y);
       break;
    }
 }
@@ -84,29 +82,26 @@ void CompCtx::conv_binary(const Binary *binary) {
    x86::Mem top = cc.newStack(4, 16);
 
    conv_var_expr_rec(binary->rhs);
-   cc.movss(top, y);
+   cc.movsd(top, y);
    conv_var_expr_rec(binary->lhs);
    switch (binary->op) {
    case ADD:
-      cc.addss(y, top);
+      cc.addsd(y, top);
       break;
    case SUB:
-      cc.subss(y, top);
+      cc.subsd(y, top);
       break;
    case MUL:
-      cc.mulss(y, top);
+      cc.mulsd(y, top);
       break;
    case DIV:
-      cc.divss(y, top);
+      cc.divsd(y, top);
       break;
    case POW:
       {
          x86::Mem top2 = cc.newStack(4, 16);
-         cc.movss(top2, x);
-         cc.movss(x, top);
-
-         cc.cvtss2sd(y, y);
-         cc.cvtss2sd(x, x);
+         cc.movsd(top2, x);
+         cc.movsd(x, top);
 
          InvokeNode *toPow;
          cc.invoke(&toPow,
@@ -116,8 +111,7 @@ void CompCtx::conv_binary(const Binary *binary) {
          toPow->setArg(1, x);
          toPow->setRet(0, y);
 
-         cc.cvtsd2ss(y, y);
-         cc.movss(x, top2);
+         cc.movsd(x, top2);
       }
 
       break;
@@ -136,7 +130,7 @@ void CompCtx::conv_apply(const Apply *apply) {
    InvokeNode *toFn;
    cc.invoke(&toFn,
              table->at(funcname),
-             FuncSignatureT<float, float>());
+             FuncSignatureT<double, double>());
 
    toFn->setArg(0, y);
    toFn->setRet(0, y);
@@ -165,5 +159,13 @@ Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table) {
    ctx.conv_var_expr_rec(expr);
    
    return ctx.end();   
+}
+
+void add_default_fns(Table &table) {
+   table["Sqrt"] = &sqrt;
+   table["Log"] = &log;
+   table["Sin"] = &sin;
+   table["Cos"] = &cos;
+   table["Tan"] = &tan;
 }
 

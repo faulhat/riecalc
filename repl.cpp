@@ -15,6 +15,8 @@ int main() {
    char next;
 
    Table table;
+   add_default_fns(table);
+
    char *funcname;
    int errc;
    const char **errv;
@@ -66,7 +68,7 @@ int main() {
          printf("\n");
       }
       else {
-         float result = (*fn)(0);
+         double result = (*fn)(0);
          printf("\n> ");
          print_expr(expr, (FILE *)stdout);
          printf(" = %.4f\n\n", result);

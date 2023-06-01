@@ -15,7 +15,7 @@ extern "C" {
 
 using namespace asmjit;
 
-typedef float (*Func)(float);
+typedef double (*Func)(double);
 
 typedef std::unordered_map<std::string, Func> Table;
 
@@ -56,6 +56,8 @@ private:
 };
 
 Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table);
+
+void add_default_fns(Table &table);
 
 #endif
 
