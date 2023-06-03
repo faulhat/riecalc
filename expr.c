@@ -100,6 +100,7 @@ void destroy_expr(Expr *expr) {
    case APPLY:
       free(expr->val.apply->funcname);
       destroy_expr(expr->val.apply->arg);
+      free(expr->val.apply);
       break;
    case NUMBER:
    case VARIABLE:

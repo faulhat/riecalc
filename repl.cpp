@@ -81,6 +81,7 @@ int main() {
          printf(" = %.4f\n\n", result);
       }     
  
+      yylex_destroy();
       destroy_expr(expr);
    }
 

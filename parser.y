@@ -33,12 +33,12 @@ stmt:
      {
          *funcname = $1;
          *root = $$ = $3;
-         return *errc;
+         YYABORT;
      }
    | expr ENDL
      {
          *root = $$ = $1;
-         return *errc;
+         YYABORT;
      }
    ;
 
