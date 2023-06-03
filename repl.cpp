@@ -21,6 +21,7 @@ void repl() {
    char *funcname;
    int errc;
    const char **errv;
+   double result;
    while (true) {
       linestream.str("");
 
@@ -48,6 +49,7 @@ void repl() {
 
       yy_scan_string(line.c_str());
       
+      expr = nullptr;
       funcname = nullptr;
       errc = 0;
       yyparse(&expr, &funcname, &errc, &errv);
@@ -55,10 +57,10 @@ void repl() {
          for (int i = 0; i < errc; i++) {
             printf("Parser error: %s\n", errv[i]);
          }
-         
          printf("\n");
+
          free(errv);
-         continue;
+         goto cleanup;
       }
 
       try {
@@ -66,7 +68,7 @@ void repl() {
       }
       catch (NameResFail err) {
          err.report();
-         continue;
+         goto cleanup;
       }
 
       if (funcname != nullptr) {
@@ -75,14 +77,17 @@ void repl() {
          printf("\n");
       }
       else {
-         double result = (*fn)(0);
+         result = (*fn)(0);
          printf("\n> ");
          print_expr(expr, (FILE *)stdout);
          printf(" = %.4f\n\n", result);
       }     
  
+   cleanup:
       yylex_destroy();
-      destroy_expr(expr);
+      if (expr != nullptr) {
+         destroy_expr(expr);
+      }
    }
 
    for (auto f: table) {

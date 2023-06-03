@@ -41,10 +41,16 @@ void test_expr(JitRuntime &rt,
    char *funcname;
    int errc = 0;
    const char **errv;
-   
+   double result;
+
    yy_scan_string(in);
    yyparse(&expr, &funcname, &errc, &errv);
-   assert(errc == 0);
+   if (errc != 0) {
+      printf("Parser error: %s\n\n", errv[0]);
+      ++*ctr;
+      
+      goto cleanup;
+   }
 
    Func fn;
    try {
@@ -54,10 +60,10 @@ void test_expr(JitRuntime &rt,
       err.report();
       ++*ctr;
       
-      return;
+      goto cleanup; 
    }
 
-   double result = (*fn)(0);
+   result = (*fn)(0);
    printf("> ");
    print_expr(expr, (FILE *)stdout);
    printf(" = %.4f\n", result);
@@ -70,8 +76,11 @@ void test_expr(JitRuntime &rt,
       printf("Success!\n\n");
    }
 
+cleanup:
    yylex_destroy();
-   destroy_expr(expr);
+   if (expr != nullptr) {
+      destroy_expr(expr);
+   }
 }
 
 void run_tests() {
@@ -96,7 +105,13 @@ void run_tests() {
    int ctr = 0;
    test_expr(rt, "F(3)", table, &ctr, 7);
    test_expr(rt, "G(2)", table, &ctr, 20);
-   test_expr(rt, "E()^(Ln(5) + Ln(4))", table, &ctr, 20);
+   test_expr(rt, "G(3)^-F(-1)", table, &ctr, 56);
+   test_expr(rt, "E()^(Ln(5) + Ln(2))", table, &ctr, 10);
    test_expr(rt, "Cos(Pi())", table, &ctr, -1);
+   test_expr(rt, "2[Sin(3 * Pi()/2)]", table, &ctr, 2);
+
+   for (auto f: table) {
+      rt.release(*f.second);
+   }
 }
  

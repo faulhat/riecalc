@@ -78,6 +78,10 @@ pow:
       {
          $$ = new_binary(POW, $1, $3);
       }
+   | isolate '^' '-' pow
+      {
+         $$ = new_binary(POW, $1, new_unary(NEG, $4));
+      }
    ;
 
 cmul:
