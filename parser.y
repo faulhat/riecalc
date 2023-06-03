@@ -20,21 +20,15 @@
 
 %token NUM VAR FUNC ENDL
 
-%nonassoc '='
-%nonassoc IS_EXPR
-%nonassoc UMINUS
-%left '+' '-'
-%right CMUL
-%left '*' '/'
-%left '^'
+%nonassoc '=' '+' '-' '*' '/' '^'
 
 %type <fval> NUM
 %type <sval> FUNC
-%type <expr> isolate expr equation
+%type <expr> isolate pow cmul neg mul expr stmt
 
 %%
 
-equation:
+stmt:
      FUNC '=' expr ENDL 
      {
          *funcname = $1;
@@ -46,68 +40,97 @@ equation:
          *root = $$ = $1;
          return *errc;
      }
-
-expr:
-     expr '+' expr
-      {
-         *root = $$ = new_binary(ADD, $1, $3);
-      }
-   | expr '-' expr
-      {
-         *root = $$ = new_binary(SUB, $1, $3);
-      }
-   | expr '*' expr
-      {
-         *root = $$ = new_binary(MUL, $1, $3);
-      }
-   | isolate expr %prec CMUL
-      {
-         *root = $$ = new_binary(MUL, $1, $2);
-      }
-   | expr '/' expr
-      {
-         *root = $$ = new_binary(DIV, $1, $3);
-      }
-   | expr '^' expr
-      {
-         *root = $$ = new_binary(POW, $1, $3);
-      }
-   | '-' expr %prec UMINUS
-      {
-         *root = $$ = new_unary(NEG, $2);
-      }
-   | isolate %prec IS_EXPR
-      {
-         *root = $$ = $1;
-      }
    ;
 
 isolate:
-     FUNC '(' expr ')'
+     VAR
       {
-         *root = $$ = new_apply($1, $3);
-      }
-   | FUNC '(' ')'
-      {
-         *root = $$ = new_apply($1, new_num_expr(0));
-      }
-   | '[' expr ']'
-      {
-         *root = $$ = new_unary(ABS, $2);
-      }
-   | '(' expr ')'
-      {
-         *root = $$ = $2;
+         $$ = new_var_expr();
       }
    | NUM
       {
-         *root = $$ = new_num_expr($1);
+         $$ = new_num_expr($1);
       }
-   | VAR
+   | '(' expr ')'
       {
-         *root = $$ = new_var_expr();
+         $$ = $2;
       }
-   ; 
+   | '[' expr ']'
+      {
+         $$ = new_unary(ABS, $2);
+      }
+   | FUNC '(' expr ')'
+      {
+         $$ = new_apply($1, $3);
+      }
+   | FUNC '(' ')'
+      {
+         $$ = new_apply($1, new_num_expr(0));
+      }
+   ;
+
+pow:
+     isolate
+      {
+         $$ = $1;
+      }
+   | isolate '^' pow
+      {
+         $$ = new_binary(POW, $1, $3);
+      }
+   ;
+
+cmul:
+     pow
+      {
+         $$ = $1;
+      }
+   | cmul pow
+      {
+         $$ = new_binary(MUL, $1, $2);
+      }
+   ;
+   
+neg:
+     cmul
+      {
+         $$ = $1;
+      }
+   | '-' cmul
+      {
+         $$ = new_unary(NEG, $2);
+      }
+   ;
+
+mul:
+     neg
+      {
+         $$ = $1;
+      }
+   | mul '*' neg
+      {
+         $$ = new_binary(MUL, $1, $3);
+      }
+   | mul '/' neg
+      {
+         $$ = new_binary(DIV, $1, $3);
+      }
+   ;
+
+expr:
+     mul
+      {
+         $$ = $1;
+      }
+   | expr '+' mul
+      {
+         $$ = new_binary(ADD, $1, $3);
+      }
+   | expr '-' mul
+      {
+         $$ = new_binary(SUB, $1, $3);
+      }
+   ;
 
 %%
 
