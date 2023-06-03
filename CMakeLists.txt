@@ -61,6 +61,8 @@ Add_Executable(repl
    expr.c
    compile.cpp
    repl.cpp 
+   test.cpp
+   main.cpp
    ${ASMJIT_SRC})
 
 Target_Link_Libraries(repl ${ASMJIT_DEPS})

@@ -6,7 +6,7 @@
 
 using namespace asmjit;
 
-int main() {
+void repl() {
    JitRuntime rt;
    
    Expr *expr;
@@ -88,6 +88,4 @@ int main() {
    for (auto f: table) {
       rt.release(*f.second);
    }
-
-   return 0;
 }
