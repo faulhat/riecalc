@@ -138,6 +138,6 @@ expr:
 %%
 
 void yyerror(Expr **, char **, const char **err, const char *s) {
-   *err = s;
+   *err = strdup(s);
 }
 

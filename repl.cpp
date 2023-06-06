@@ -50,12 +50,11 @@ void repl() {
          }
 
          printf("\n");
+         destroy_expr(expr);
       }
       catch (ReportingException *e) {
          e->report();
       }
-      
-      destroy_expr(expr);
    }
 
    for (auto f: table) {

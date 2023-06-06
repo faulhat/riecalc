@@ -43,7 +43,7 @@ const char *ParseError::what() {
 }
 
 void ParseError::report() {
-   printf("The parser encountered an error: %s\n", msg.c_str());
+   printf("The parser encountered an error: %s\n\n", msg.c_str());
 }
 
 CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)
