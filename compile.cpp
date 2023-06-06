@@ -7,6 +7,21 @@
 
 using namespace asmjit;
 
+Table::Table() {
+   std::unordered_map<std::string, Func> base =
+           {{ "Sqrt", &sqrt },
+            { "Log",  &log  },
+            { "Sin",  &sin  },
+            { "Cos",  &cos  },
+            { "Tan",  &tan  }};
+   
+   std::swap(*this, base);
+}
+
+void ReportingException::report() {
+   printf("Unknown exception thrown.\n\n");
+}
+
 NameResFail::NameResFail(const char *_name)
    : name(_name)
 {}
@@ -17,6 +32,18 @@ const char *NameResFail::what() {
 
 void NameResFail::report() {
    printf("Function name could not be resolved.\nName given: %s\n\n", name.c_str());
+}
+
+ParseError::ParseError(const char *_msg)
+   : msg(_msg)
+{}
+
+const char *ParseError::what() {
+   return "Error caught from parser.";
+}
+
+void ParseError::report() {
+   printf("The parser encountered an error: %s\n", msg.c_str());
 }
 
 CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)
@@ -120,7 +147,7 @@ void CompCtx::conv_binary(const Binary *binary) {
 
 void CompCtx::conv_apply(const Apply *apply) {
    if (table->find(apply->funcname) == table->end()) {
-      throw NameResFail(apply->funcname);
+      throw new NameResFail(apply->funcname);
    }
 
    std::string funcname(apply->funcname);
@@ -159,11 +186,40 @@ Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table) {
    return ctx.end();   
 }
 
-void add_default_fns(Table &table) {
-   table["Sqrt"] = &sqrt;
-   table["Log"] = &log;
-   table["Sin"] = &sin;
-   table["Cos"] = &cos;
-   table["Tan"] = &tan;
+bool conv_eval_str(JitRuntime &rt,
+                   const char *in,
+                   Table &table,
+                   Expr **expr,
+                   double *result,
+                   char **funcRes) {
+   char *funcname = nullptr;
+   const char *err = nullptr;
+   bool hasResult = false;
+
+   yy_scan_string(in);
+   yyparse(expr, &funcname, &err);
+   if (err != nullptr) {
+      throw new ParseError(err);
+   }
+   
+   Func fn = conv_var_expr(*expr, rt, &table);
+   if (funcname != nullptr) {
+      table[std::string(funcname)] = fn;
+      if (funcRes != nullptr) {
+         *funcRes = funcname;
+      }
+   }
+   else {
+      *result = fn(0);
+      rt.release(fn);
+      hasResult = true;
+   }
+
+   if (funcRes == nullptr) {
+      free(funcname);
+   }
+
+   yylex_destroy();
+   return hasResult;
 }
 

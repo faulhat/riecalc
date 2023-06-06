@@ -55,7 +55,7 @@ Include("${ASMJIT_DIR}/CMakeLists.txt")
 Set(CMAKE_C_FLAGS "$(CMAKE_C_FLAGS) -g")
 Set(CMAKE_CXX_FLAGS "-g")
 
-Add_Executable(repl
+Add_Executable(rcalc
    parser.c
    lexer.c
    expr.c
@@ -65,5 +65,5 @@ Add_Executable(repl
    main.cpp
    ${ASMJIT_SRC})
 
-Target_Link_Libraries(repl ${ASMJIT_DEPS})
+Target_Link_Libraries(rcalc ${ASMJIT_DEPS})
 

@@ -18,26 +18,47 @@ using namespace asmjit;
 typedef double (*Func)(double);
 
 /* A type for the REPL's symbol table */
-typedef std::unordered_map<std::string, Func> Table;
+class Table : public std::unordered_map<std::string, Func> {
+public:
+   Table();
+};
+
+/* An exception with a method that prints a message */
+class ReportingException : public std::exception {
+public:
+   virtual void report();
+};
 
 /* Name resolution failure exception class.
  * Thrown by the compiler when the user tries to use an unknown function.
  */
-class NameResFail : public std::exception {
+class NameResFail : public ReportingException {
 public:
    std::string name;
 
    NameResFail(const char *name);
 
    virtual const char *what();
+   
+   virtual void report();
+};
 
-   void report();
+class ParseError : public ReportingException {
+public:
+   std::string msg;
+
+   ParseError(const char *msg);
+
+   virtual const char *what();
+
+   virtual void report();
 };
 
 /* A class to store information for the compiler.
  * Meant to be used for the compilation of a single expression.
  */
-struct CompCtx {
+class CompCtx {
+public:
    const Table *table;
    x86::Compiler cc;
    x86::Xmm y, x;
@@ -64,8 +85,16 @@ private:
 /* Converts the provided expression into a callable function. */
 Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table);
 
-/* Adds common math functions into the given symbol table. */
-void add_default_fns(Table &table);
+/* Evaluates an expression from a string.
+ * Writes the result to the provided double.
+ * Returns true if the expression had a result (false if it was a definition).
+ */
+bool conv_eval_str(JitRuntime &rt,
+                   const char *in,
+                   Table &table,
+                   Expr **expr,
+                   double *result,
+                   char **funcRes = nullptr);
 
 #endif
 

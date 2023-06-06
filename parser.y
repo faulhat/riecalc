@@ -2,7 +2,7 @@
    #include "expr.h"
    #include "lexer.h"
 
-   void yyerror(Expr **, char **, int *errc, const char ***errv, const char *s);
+   void yyerror(Expr **, char **, const char **err, const char *s);
 %}
 
 %union {
@@ -13,8 +13,7 @@
 
 %parse-param {Expr **root}
 %parse-param {char **funcname}
-%parse-param {int *errc}
-%parse-param {const char ***errv}
+%parse-param {const char **err}
 
 %define parse.error detailed
 
@@ -138,15 +137,7 @@ expr:
 
 %%
 
-void yyerror(Expr **, char **, int *errc, const char ***errv, const char *s) {
-   if (*errc == 0) {
-      *errv = malloc(sizeof(char *));
-   }
-   else {
-      *errv = realloc(*errv, (*errc + 1) * sizeof(char *));
-   }
-
-   *errv[*errc] = s;
-   ++*errc;
+void yyerror(Expr **, char **, const char **err, const char *s) {
+   *err = s;
 }
 

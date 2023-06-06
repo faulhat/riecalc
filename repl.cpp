@@ -15,12 +15,7 @@ void repl() {
    char next;
 
    Table table;
-   add_default_fns(table);
-
    Func fn;
-   char *funcname;
-   int errc;
-   const char **errv;
    double result;
    while (true) {
       linestream.str("");
@@ -47,47 +42,20 @@ void repl() {
          continue;
       }
 
-      yy_scan_string(line.c_str());
-      
-      expr = nullptr;
-      funcname = nullptr;
-      errc = 0;
-      yyparse(&expr, &funcname, &errc, &errv);
-      if (errc != 0) {
-         for (int i = 0; i < errc; i++) {
-            printf("Parser error: %s\n", errv[i]);
-         }
-         printf("\n");
-
-         free(errv);
-         goto cleanup;
-      }
-
       try {
-         fn = conv_var_expr(expr, rt, &table);
-      }
-      catch (NameResFail err) {
-         err.report();
-         goto cleanup;
-      }
+         if (conv_eval_str(rt, line.c_str(), table, &expr, &result)) {
+            printf("> ");
+            print_expr(expr, (FILE *)stdout);
+            printf(" = %.4f\n", result);
+         }
 
-      if (funcname != nullptr) {
-         table[std::string(funcname)] = fn;
-         free(funcname);
          printf("\n");
       }
-      else {
-         result = (*fn)(0);
-         printf("\n> ");
-         print_expr(expr, (FILE *)stdout);
-         printf(" = %.4f\n\n", result);
-      }     
- 
-   cleanup:
-      yylex_destroy();
-      if (expr != nullptr) {
-         destroy_expr(expr);
+      catch (ReportingException *e) {
+         e->report();
       }
+      
+      destroy_expr(expr);
    }
 
    for (auto f: table) {
