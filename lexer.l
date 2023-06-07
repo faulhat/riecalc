@@ -30,7 +30,7 @@ e {
    return VAR;
 }
 
-[A-Z][a-z0-9_]* {
+[A-Z][A-Za-z0-9_]* {
    yylval.sval = strdup(yytext);
    return FUNC;
 }

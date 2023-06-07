@@ -98,6 +98,8 @@ void print_expr(const Expr *expr, FILE *to) {
 }
 
 void destroy_expr(Expr *expr) {
+   if (expr == NULL) return;   
+
    switch (expr->type) {
    case UNARY:
       destroy_expr(expr->val.unary->inner);
