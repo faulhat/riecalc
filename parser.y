@@ -2,7 +2,7 @@
    #include "expr.h"
    #include "lexer.h"
 
-   void yyerror(Expr **, char **, const char **err, const char *s);
+   void yyerror(Expr **, char **, char **, const char **err, const char *s);
 %}
 
 %union {
@@ -13,38 +13,49 @@
 
 %parse-param {Expr **root}
 %parse-param {char **funcname}
+%parse-param {char **varname}
 %parse-param {const char **err}
 
 %define parse.error detailed
 
-%token NUM VAR FUNC ENDL
+%token NUM VAR ARG FUNC ENDL
 
 %nonassoc '=' '+' '-' '*' '/' '^'
 
 %type <fval> NUM
-%type <sval> FUNC
+%type <sval> FUNC VAR
 %type <expr> isolate pow cmul neg mul expr stmt
 
 %%
 
 stmt:
      FUNC '=' expr ENDL 
-     {
+      {
          *funcname = $1;
          *root = $$ = $3;
          YYABORT;
-     }
+      }
+   | VAR '=' expr ENDL
+      {
+         *varname = $1;
+         *root = $$ = $3;
+         YYABORT;
+      }
    | expr ENDL
-     {
+      {
          *root = $$ = $1;
          YYABORT;
-     }
+      }
    ;
 
 isolate:
      VAR
       {
-         $$ = new_var_expr();
+         $$ = new_var_expr($1);
+      }
+   | ARG
+      {
+         $$ = new_arg_expr();
       }
    | NUM
       {
@@ -61,6 +72,10 @@ isolate:
    | FUNC '(' expr ')'
       {
          $$ = new_apply($1, $3);
+      }
+   | FUNC '[' expr ']'
+      {
+         $$ = new_apply($1, new_unary(ABS, $3));
       }
    | FUNC '(' ')'
       {
@@ -137,7 +152,7 @@ expr:
 
 %%
 
-void yyerror(Expr **, char **, const char **err, const char *s) {
+void yyerror(Expr **, char **, char **, const char **err, const char *s) {
    *err = strdup(s);
 }
 

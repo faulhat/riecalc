@@ -35,7 +35,7 @@ typedef struct {
 } Apply;
 
 typedef enum {
-   NUMBER, VARIABLE, UNARY, BINARY, APPLY
+   NUMBER, VARIABLE, ARGUMENT, UNARY, BINARY, APPLY
 } ExprType;
 
 typedef union {
@@ -43,6 +43,7 @@ typedef union {
    Unary *unary;
    Binary *binary;
    Apply *apply;
+   char *varname;
 } ExprVal;
 
 /* Overarching expression type */
@@ -55,13 +56,15 @@ struct Expr {
 
 Expr *new_num_expr(double number);
 
-Expr *new_var_expr();
+Expr *new_arg_expr();
 
 Expr *new_unary(UOp op, Expr *inner);
 
 Expr *new_binary(BOp op, Expr *lhs, Expr *rhs);
 
 Expr *new_apply(char *funcname, Expr *arg);
+
+Expr *new_var_expr(char *varname);
 
 /* Pretty-prints an expression to the console. */
 void print_expr(const Expr *expr, FILE *to);

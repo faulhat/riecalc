@@ -7,7 +7,7 @@
 
 using namespace asmjit;
 
-Table::Table() {
+FnTable::FnTable() {
    std::unordered_map<std::string, Func> base =
            {{ "Sqrt", &sqrt },
             { "Log",  &log  },
@@ -46,8 +46,15 @@ void ParseError::report() {
    printf("The parser encountered an error: %s\n\n", msg.c_str());
 }
 
-CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)
-   : rt(_rt), code(_code), cc(&_code), table(_table)
+CompCtx::CompCtx(JitRuntime &_rt,
+                 CodeHolder &_code,
+                 const FnTable *_fnTable,
+                 const VarTable *_varTable)
+   : rt(_rt), 
+     code(_code),
+     cc(&_code),
+     fnTable(_fnTable),
+     varTable(_varTable)
 {
    x = cc.newXmm();
    y = cc.newXmm();
@@ -56,7 +63,7 @@ CompCtx::CompCtx(JitRuntime &_rt, CodeHolder &_code, const Table *_table)
    f->setArg(0, x);
 }
 
-void CompCtx::conv_var_expr_rec(const Expr *expr) {
+void CompCtx::conv_expr_rec(const Expr *expr) {
    switch (expr->type) {
    case UNARY:
       conv_unary(expr->val.unary);
@@ -67,6 +74,9 @@ void CompCtx::conv_var_expr_rec(const Expr *expr) {
    case APPLY:
       conv_apply(expr->val.apply);
       break;
+   case VARIABLE:
+      conv_var_expr(expr->val.varname);
+      break;
    case NUMBER:
       {
          x86::Mem numConst = cc.newDoubleConst(ConstPoolScope::kLocal, expr->val.number);
@@ -74,14 +84,14 @@ void CompCtx::conv_var_expr_rec(const Expr *expr) {
       }
 
       break;
-   case VARIABLE:
+   case ARGUMENT:
       cc.movsd(y, x);
       break;
    }
 }
 
 void CompCtx::conv_unary(const Unary *unary) {
-   conv_var_expr_rec(unary->inner);
+   conv_expr_rec(unary->inner);
    switch (unary->op) {
    case NEG:
       {
@@ -108,9 +118,9 @@ void CompCtx::conv_unary(const Unary *unary) {
 void CompCtx::conv_binary(const Binary *binary) {
    x86::Mem top = cc.newStack(4, 16);
 
-   conv_var_expr_rec(binary->rhs);
+   conv_expr_rec(binary->rhs);
    cc.movsd(top, y);
-   conv_var_expr_rec(binary->lhs);
+   conv_expr_rec(binary->lhs);
    switch (binary->op) {
    case ADD:
       cc.addsd(y, top);
@@ -146,19 +156,28 @@ void CompCtx::conv_binary(const Binary *binary) {
 }
 
 void CompCtx::conv_apply(const Apply *apply) {
-   if (table->find(apply->funcname) == table->end()) {
+   if (fnTable->find(apply->funcname) == fnTable->end()) {
       throw new NameResFail(apply->funcname);
    }
 
    std::string funcname(apply->funcname);
-   conv_var_expr_rec(apply->arg);
+   conv_expr_rec(apply->arg);
    InvokeNode *toFn;
    cc.invoke(&toFn,
-             table->at(funcname),
+             fnTable->at(funcname),
              FuncSignatureT<double, double>());
 
    toFn->setArg(0, y);
    toFn->setRet(0, y);
+}
+
+void CompCtx::conv_var_expr(const char *varname) {
+   if (varTable->find(varname) == varTable->end()) {
+      throw new NameResFail(varname);
+   }
+
+   x86::Mem val = cc.newDoubleConst(ConstPoolScope::kLocal, varTable->at(varname));
+   cc.movsd(y, val);
 }
 
 Func CompCtx::end() {
@@ -176,37 +195,47 @@ Func CompCtx::end() {
    return fn;
 }
 
-Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table) {
+Func conv_expr(const Expr *expr, JitRuntime &rt, const FnTable *fnTable, const VarTable *varTable) {
    CodeHolder code;
    code.init(rt.environment(), rt.cpuFeatures());
    
-   CompCtx ctx(rt, code, table);
-   ctx.conv_var_expr_rec(expr);
+   CompCtx ctx(rt, code, fnTable, varTable);
+   ctx.conv_expr_rec(expr);
    
    return ctx.end();   
 }
 
 bool conv_eval_str(JitRuntime &rt,
                    const char *in,
-                   Table &table,
+                   FnTable &fnTable,
+                   VarTable &varTable,
                    Expr **expr,
                    double *result,
-                   char **funcRes) {
-   char *funcname = nullptr;
+                   char **funcRes,
+                   char **varRes) {
+   char *funcname = nullptr,
+        *varname = nullptr;
+
    const char *err = nullptr;
    bool hasResult = false;
 
    yy_scan_string(in);
-   yyparse(expr, &funcname, &err);
+   yyparse(expr, &funcname, &varname, &err);
    if (err != nullptr) {
       throw new ParseError(err);
    }
    
-   Func fn = conv_var_expr(*expr, rt, &table);
+   Func fn = conv_expr(*expr, rt, &fnTable, &varTable);
    if (funcname != nullptr) {
-      table[std::string(funcname)] = fn;
+      fnTable[funcname] = fn;
       if (funcRes != nullptr) {
          *funcRes = funcname;
+      }
+   }
+   else if (varname != nullptr) {
+      varTable[varname] = fn(0);
+      if (varRes != nullptr) {
+         *varRes = varname;
       }
    }
    else {
@@ -217,6 +246,9 @@ bool conv_eval_str(JitRuntime &rt,
 
    if (funcRes == nullptr) {
       free(funcname);
+   }
+   else if (varRes == nullptr) {
+      free(varname);
    }
 
    yylex_destroy();

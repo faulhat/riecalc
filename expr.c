@@ -11,9 +11,9 @@ Expr *new_num_expr(double number) {
    return expr;
 }
 
-Expr *new_var_expr() {
+Expr *new_arg_expr() {
    Expr *expr = malloc(sizeof(Expr));
-   expr->type = VARIABLE;
+   expr->type = ARGUMENT;
    
    return expr;
 }
@@ -49,6 +49,14 @@ Expr *new_binary(BOp op, Expr *lhs, Expr *rhs) {
    return expr;
 }
 
+Expr *new_var_expr(char *varname) {
+   Expr *expr = malloc(sizeof(Expr));
+   expr->type = VARIABLE;
+   expr->val.varname = varname;
+
+   return expr;
+}
+
 void print_expr(const Expr *expr, FILE *to) {
    switch (expr->type) {
    case UNARY:
@@ -81,6 +89,9 @@ void print_expr(const Expr *expr, FILE *to) {
       fprintf(to, "%.2f", expr->val.number);
       break;
    case VARIABLE:
+      fprintf(to, expr->val.varname);
+      break;
+   case ARGUMENT:
       fprintf(to, "X");
       break;
    }
@@ -102,8 +113,10 @@ void destroy_expr(Expr *expr) {
       destroy_expr(expr->val.apply->arg);
       free(expr->val.apply);
       break;
-   case NUMBER:
    case VARIABLE:
+      free(expr->val.varname);
+      break;
+   default:
       break;
    }
 

@@ -11,17 +11,18 @@ extern "C" {
 #include <unordered_map>
 #include <string>
 #include <exception>
-#include <stack>
 
 using namespace asmjit;
 
 typedef double (*Func)(double);
 
 /* A type for the REPL's symbol table */
-class Table : public std::unordered_map<std::string, Func> {
+class FnTable : public std::unordered_map<std::string, Func> {
 public:
-   Table();
+   FnTable();
 };
+
+typedef std::unordered_map<std::string, double> VarTable;
 
 /* An exception with a method that prints a message */
 class ReportingException : public std::exception {
@@ -59,17 +60,21 @@ public:
  */
 class CompCtx {
 public:
-   const Table *table;
+   const FnTable *fnTable;
+   const VarTable *varTable;
    x86::Compiler cc;
    x86::Xmm y, x;
 
    JitRuntime &rt;
    CodeHolder &code;
 
-   CompCtx(JitRuntime &rt, CodeHolder &code, const Table *table);
+   CompCtx(JitRuntime &rt,
+           CodeHolder &code,
+           const FnTable *fnTable,
+           const VarTable *varTable);
 
    /* Starts the recursive compilation of the expression. */
-   void conv_var_expr_rec(const Expr *expr);
+   void conv_expr_rec(const Expr *expr);
 
    /* Cleans up the compiler and returns the compiled function */
    Func end();
@@ -80,10 +85,15 @@ private:
    void conv_binary(const Binary *binary);
 
    void conv_apply(const Apply *apply);
+
+   void conv_var_expr(const char *varname);
 };
 
 /* Converts the provided expression into a callable function. */
-Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table);
+Func conv_var_expr(const Expr *expr,
+                   JitRuntime &rt,
+                   const FnTable &fnTable,
+                   const VarTable &varTable);
 
 /* Evaluates an expression from a string.
  * Writes the result to the provided double.
@@ -91,10 +101,12 @@ Func conv_var_expr(const Expr *expr, JitRuntime &rt, const Table *table);
  */
 bool conv_eval_str(JitRuntime &rt,
                    const char *in,
-                   Table &table,
+                   FnTable &fnTable,
+                   VarTable &varTable,
                    Expr **expr,
                    double *result,
-                   char **funcRes = nullptr);
+                   char **funcRes = nullptr,
+                   char **varRes = nullptr);
 
 #endif
 

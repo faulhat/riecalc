@@ -12,12 +12,17 @@
 
 [-+*/[\]()^=] return *yytext;
 
-[A-Z][A-Za-z_]* {
+x return ARG;
+
+[a-z][0-9_]* {
+   yylval.sval = strdup(yytext);
+   return VAR;
+}
+
+[A-Z][a-z0-9_]* {
    yylval.sval = strdup(yytext);
    return FUNC;
 }
-
-x return VAR;
 
 [ \t] ;
 
