@@ -42,8 +42,7 @@ e {
 <<EOF>> return ENDL;
 
 . {
-   fprintf(stderr, "Cannot parse expr from input! Unrecognized char: %s\n", yytext);
-   exit(EXIT_FAILURE);
+   printf("WARNING: Unrecognized char ignored: %s\n", yytext);
 }
 
 %%
