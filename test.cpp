@@ -55,26 +55,24 @@ void run_tests() {
    Expr *expr;
    char *funcname;
 
-   static const char *functions[] = {
+   std::vector<const char *> functions = {
       "F = 2x + 1",
       "G = 2^x * F(x)",
-      "e = 2.71828",
       "Ln = Log(x)/Log(e)",
-      "p = 3.1415926535"
    };
 
    ExecCtx ectx;
    int ctr = 0, fails = 0;
-   for (int i = 0; i < 5; i++) {
-      test_expr(rt, functions[i], ectx, &ctr, &fails); 
+   for (auto fn: functions) {
+      test_expr(rt, fn, ectx, &ctr, &fails); 
    }
    
    test_expr(rt, "F(3)", ectx, &ctr, &fails, 7);
    test_expr(rt, "G(2)", ectx, &ctr, &fails, 20);
    test_expr(rt, "G(3)^-F(-1)", ectx, &ctr, &fails, 56);
    test_expr(rt, "e^(Ln(5) + Ln(2))", ectx, &ctr, &fails, 10);
-   test_expr(rt, "Cos(p)", ectx, &ctr, &fails, -1);
-   test_expr(rt, "2[Sin(3 * p/2)]", ectx, &ctr, &fails, 2);
+   test_expr(rt, "Cos(pi)", ectx, &ctr, &fails, -1);
+   test_expr(rt, "2[Sin(3 * pi/2)]", ectx, &ctr, &fails, 2);
    printf("%d tests completed. %d failures. %d successes.\n", ctr, fails, ctr - fails);
 
    for (auto f: ectx.fnTable) {

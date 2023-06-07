@@ -1,6 +1,7 @@
 %{
    #include "expr.h"
    #include "parser.h"
+   #include <math.h>
 %}
 
 %%
@@ -13,6 +14,16 @@
 [-+*/[\]()^=] return *yytext;
 
 x return ARG;
+
+pi {
+   yylval.fval = M_PI;
+   return NUM;
+}
+
+e {
+   yylval.fval = M_E;
+   return NUM;
+}
 
 [a-z][0-9_]* {
    yylval.sval = strdup(yytext);
