@@ -66,13 +66,19 @@ void run_tests() {
    for (auto fn: functions) {
       test_expr(rt, fn, ectx, &ctr, &fails); 
    }
-   
-   test_expr(rt, "F(3)", ectx, &ctr, &fails, 7);
-   test_expr(rt, "G(2)", ectx, &ctr, &fails, 20);
-   test_expr(rt, "G(3)^-F(-1)", ectx, &ctr, &fails, 56);
-   test_expr(rt, "e^(Ln(5) + Ln(2))", ectx, &ctr, &fails, 10);
-   test_expr(rt, "Cos(pi)", ectx, &ctr, &fails, -1);
-   test_expr(rt, "2[Sin(3 * pi/2)]", ectx, &ctr, &fails, 2);
+  
+   std::unordered_map<const char *, double> tests = {
+      { "F(3)", 7 },
+      { "G(2)", 20 },
+      { "G(3)^-F(-1)", 56 },
+      { "e^(Ln(5) + Ln(2))", 10 },
+      { "Cos(pi)", -1 },
+      { "2[Sin(3 * pi/2)]", 2 }};
+ 
+   for (auto t: tests) {
+      test_expr(rt, t.first, ectx, &ctr, &fails, t.second);
+   }
+
    printf("%d tests completed. %d failures. %d successes.\n", ctr, fails, ctr - fails);
 
    for (auto f: ectx.fnTable) {
