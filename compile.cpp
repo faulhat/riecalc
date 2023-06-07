@@ -31,7 +31,7 @@ const char *NameResFail::what() {
 }
 
 void NameResFail::report() {
-   printf("Function name could not be resolved.\nName given: %s\n\n", name.c_str());
+   printf("Name could not be resolved.\nName given: %s\n\n", name.c_str());
 }
 
 ParseError::ParseError(const char *_msg)
@@ -48,13 +48,11 @@ void ParseError::report() {
 
 CompCtx::CompCtx(JitRuntime &_rt,
                  CodeHolder &_code,
-                 const FnTable *_fnTable,
-                 const VarTable *_varTable)
-   : rt(_rt), 
+                 const ExecCtx &_ectx)
+   : rt(_rt),
      code(_code),
      cc(&_code),
-     fnTable(_fnTable),
-     varTable(_varTable)
+     ectx(_ectx)
 {
    x = cc.newXmm();
    y = cc.newXmm();
@@ -156,15 +154,14 @@ void CompCtx::conv_binary(const Binary *binary) {
 }
 
 void CompCtx::conv_apply(const Apply *apply) {
-   if (fnTable->find(apply->funcname) == fnTable->end()) {
+   if (ectx.fnTable.find(apply->funcname) == ectx.fnTable.end()) {
       throw new NameResFail(apply->funcname);
    }
 
-   std::string funcname(apply->funcname);
    conv_expr_rec(apply->arg);
    InvokeNode *toFn;
    cc.invoke(&toFn,
-             fnTable->at(funcname),
+             ectx.fnTable.at(apply->funcname),
              FuncSignatureT<double, double>());
 
    toFn->setArg(0, y);
@@ -172,11 +169,13 @@ void CompCtx::conv_apply(const Apply *apply) {
 }
 
 void CompCtx::conv_var_expr(const char *varname) {
-   if (varTable->find(varname) == varTable->end()) {
+   if (ectx.varTable.find(varname) == ectx.varTable.end()) {
       throw new NameResFail(varname);
    }
 
-   x86::Mem val = cc.newDoubleConst(ConstPoolScope::kLocal, varTable->at(varname));
+   x86::Mem val = cc.newDoubleConst(ConstPoolScope::kLocal,
+                                    ectx.varTable.at(varname));
+
    cc.movsd(y, val);
 }
 
@@ -195,11 +194,13 @@ Func CompCtx::end() {
    return fn;
 }
 
-Func conv_expr(const Expr *expr, JitRuntime &rt, const FnTable *fnTable, const VarTable *varTable) {
+Func conv_expr(const Expr *expr,
+               JitRuntime &rt,
+               const ExecCtx &ectx) {
    CodeHolder code;
    code.init(rt.environment(), rt.cpuFeatures());
    
-   CompCtx ctx(rt, code, fnTable, varTable);
+   CompCtx ctx(rt, code, ectx);
    ctx.conv_expr_rec(expr);
    
    return ctx.end();   
@@ -207,10 +208,9 @@ Func conv_expr(const Expr *expr, JitRuntime &rt, const FnTable *fnTable, const V
 
 bool conv_eval_str(JitRuntime &rt,
                    const char *in,
-                   FnTable &fnTable,
-                   VarTable &varTable,
+                   ExecCtx &ectx,
                    Expr **expr,
-                   double *result,
+                   double &result,
                    char **funcRes,
                    char **varRes) {
    char *funcname = nullptr,
@@ -225,21 +225,21 @@ bool conv_eval_str(JitRuntime &rt,
       throw new ParseError(err);
    }
    
-   Func fn = conv_expr(*expr, rt, &fnTable, &varTable);
+   Func fn = conv_expr(*expr, rt, ectx);
    if (funcname != nullptr) {
-      fnTable[funcname] = fn;
+      ectx.fnTable[funcname] = fn;
       if (funcRes != nullptr) {
          *funcRes = funcname;
       }
    }
    else if (varname != nullptr) {
-      varTable[varname] = fn(0);
+      ectx.varTable[varname] = fn(0);
       if (varRes != nullptr) {
          *varRes = varname;
       }
    }
    else {
-      *result = fn(0);
+      result = fn(0);
       rt.release(fn);
       hasResult = true;
    }

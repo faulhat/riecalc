@@ -8,8 +8,7 @@ extern "C" {
 
 void test_expr(JitRuntime &rt,
                const char *in,
-               FnTable &fnTable,
-               VarTable &varTable,
+               ExecCtx &ectx,
                int *ctr, int *fails,
                double expected = 0,
                double delta = 0.001) {
@@ -17,7 +16,7 @@ void test_expr(JitRuntime &rt,
    double result;
    char *funcname = nullptr, *varname = nullptr;
    try {
-      if (conv_eval_str(rt, in, fnTable, varTable, &expr, &result, &funcname, &varname)) {
+      if (conv_eval_str(rt, in, ectx, &expr, result, &funcname, &varname)) {
          printf("> ");
          print_expr(expr, (FILE *)stdout);
          printf(" = %.4f\n", result);
@@ -64,22 +63,21 @@ void run_tests() {
       "p = 3.1415926535"
    };
 
-   FnTable fnTable;
-   VarTable varTable;
+   ExecCtx ectx;
    int ctr = 0, fails = 0;
    for (int i = 0; i < 5; i++) {
-      test_expr(rt, functions[i], fnTable, varTable, &ctr, &fails); 
+      test_expr(rt, functions[i], ectx, &ctr, &fails); 
    }
    
-   test_expr(rt, "F(3)", fnTable, varTable, &ctr, &fails, 7);
-   test_expr(rt, "G(2)", fnTable, varTable, &ctr, &fails, 20);
-   test_expr(rt, "G(3)^-F(-1)", fnTable, varTable, &ctr, &fails, 56);
-   test_expr(rt, "e^(Ln(5) + Ln(2))", fnTable, varTable, &ctr, &fails, 10);
-   test_expr(rt, "Cos(p)", fnTable, varTable, &ctr, &fails, -1);
-   test_expr(rt, "2[Sin(3 * p/2)]", fnTable, varTable, &ctr, &fails, 2);
+   test_expr(rt, "F(3)", ectx, &ctr, &fails, 7);
+   test_expr(rt, "G(2)", ectx, &ctr, &fails, 20);
+   test_expr(rt, "G(3)^-F(-1)", ectx, &ctr, &fails, 56);
+   test_expr(rt, "e^(Ln(5) + Ln(2))", ectx, &ctr, &fails, 10);
+   test_expr(rt, "Cos(p)", ectx, &ctr, &fails, -1);
+   test_expr(rt, "2[Sin(3 * p/2)]", ectx, &ctr, &fails, 2);
    printf("%d tests completed. %d failures. %d successes.\n", ctr, fails, ctr - fails);
 
-   for (auto f: fnTable) {
+   for (auto f: ectx.fnTable) {
       rt.release(*f.second);
    }
 }

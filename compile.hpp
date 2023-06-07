@@ -55,13 +55,17 @@ public:
    virtual void report();
 };
 
+struct ExecCtx {
+   FnTable fnTable;
+   VarTable varTable;
+};
+
 /* A class to store information for the compiler.
  * Meant to be used for the compilation of a single expression.
  */
 class CompCtx {
 public:
-   const FnTable *fnTable;
-   const VarTable *varTable;
+   const ExecCtx &ectx;
    x86::Compiler cc;
    x86::Xmm y, x;
 
@@ -70,8 +74,7 @@ public:
 
    CompCtx(JitRuntime &rt,
            CodeHolder &code,
-           const FnTable *fnTable,
-           const VarTable *varTable);
+           const ExecCtx &ectx);
 
    /* Starts the recursive compilation of the expression. */
    void conv_expr_rec(const Expr *expr);
@@ -92,8 +95,7 @@ private:
 /* Converts the provided expression into a callable function. */
 Func conv_var_expr(const Expr *expr,
                    JitRuntime &rt,
-                   const FnTable &fnTable,
-                   const VarTable &varTable);
+                   const ExecCtx &ectx);
 
 /* Evaluates an expression from a string.
  * Writes the result to the provided double.
@@ -101,10 +103,9 @@ Func conv_var_expr(const Expr *expr,
  */
 bool conv_eval_str(JitRuntime &rt,
                    const char *in,
-                   FnTable &fnTable,
-                   VarTable &varTable,
+                   ExecCtx &ectx,
                    Expr **expr,
-                   double *result,
+                   double &result,
                    char **funcRes = nullptr,
                    char **varRes = nullptr);
 

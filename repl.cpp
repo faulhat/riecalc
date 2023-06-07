@@ -14,8 +14,7 @@ void repl() {
    std::string line;
    char next;
 
-   FnTable fnTable;
-   VarTable varTable;
+   ExecCtx ectx;
    Func fn;
    double result;
    while (true) {
@@ -44,7 +43,7 @@ void repl() {
       }
 
       try {
-         if (conv_eval_str(rt, line.c_str(), fnTable, varTable, &expr, &result)) {
+         if (conv_eval_str(rt, line.c_str(), ectx, &expr, result)) {
             printf("> ");
             print_expr(expr, (FILE *)stdout);
             printf(" = %.4f\n", result);
@@ -58,7 +57,7 @@ void repl() {
       }
    }
 
-   for (auto f: fnTable) {
+   for (auto f: ectx.fnTable) {
       rt.release(*f.second);
    }
 }
