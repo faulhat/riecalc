@@ -89,7 +89,7 @@ void print_expr(const Expr *expr, FILE *to) {
       fprintf(to, "%.2f", expr->val.number);
       break;
    case VARIABLE:
-      fprintf(to, expr->val.varname);
+      fprintf(to, "%s", expr->val.varname);
       break;
    case ARGUMENT:
       fprintf(to, "X");
