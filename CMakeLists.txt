@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.5)
 
 Project(Riemann)
 
+# Use the package PkgConfig to detect GTK+ headers/library files
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED gtk+-3.0)
+
 find_program(LEX_EXE
     flex
 )
@@ -62,8 +66,14 @@ Add_Executable(rcalc
    compile.cpp
    repl.cpp 
    test.cpp
+   sgraph.cpp
    main.cpp
    ${ASMJIT_SRC})
 
-Target_Link_Libraries(rcalc ${ASMJIT_DEPS})
+Target_Link_Libraries(rcalc PRIVATE ${ASMJIT_DEPS} ${GTK_LIBRARIES})
+
+# Setup CMake to use GTK+, tell the compiler where to look for headers
+# and to the linker where to look for libraries
+target_include_directories(rcalc PRIVATE ${GTK_INCLUDE_DIRS})
+target_link_directories(rcalc PRIVATE ${GTK_LIBRARY_DIRS})
 
