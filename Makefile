@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall `pkg-config --cflags gtk+-3.0`
+CFLAGS=-g -Wall -Wno-deprecated-declarations -Wno-unused-function `pkg-config --cflags gtk+-3.0`
 
 LEX=flex
 YACC=bison

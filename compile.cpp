@@ -51,10 +51,10 @@ void ParseError::report() {
 CompCtx::CompCtx(JitRuntime &_rt,
                  CodeHolder &_code,
                  const ExecCtx &_ectx)
-   : rt(_rt),
-     code(_code),
+   : ectx(_ectx),
      cc(&_code),
-     ectx(_ectx)
+     rt(_rt),
+     code(_code)
 {
    x = cc.newXmm();
    y = cc.newXmm();

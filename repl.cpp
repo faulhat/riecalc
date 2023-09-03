@@ -15,7 +15,6 @@ void repl() {
    char next;
 
    ExecCtx ectx;
-   Func fn;
    double result;
    while (true) {
       linestream.str("");

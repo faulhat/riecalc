@@ -58,7 +58,6 @@ void test_equal(JitRuntime &rt,
                 ExecCtx &ectx,
                 int *ctr, int *fails,
                 double delta = 0.001) {
-   int ignore_ctr, ignore_fails;
    Expr *expr_a = nullptr, *expr_b = nullptr;
    double res_a, res_b;
    char *funcname = nullptr, *varname = nullptr;
@@ -96,8 +95,6 @@ void test_equal(JitRuntime &rt,
 
 int run_tests() {
    JitRuntime rt;
-   Expr *expr;
-   char *funcname;
 
    std::vector<const char *> functions = {
       "F = 2x + 1",
