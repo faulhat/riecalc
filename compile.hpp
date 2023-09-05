@@ -93,9 +93,9 @@ private:
 };
 
 /* Converts the provided expression into a callable function. */
-Func conv_var_expr(const Expr *expr,
-                   JitRuntime &rt,
-                   const ExecCtx &ectx);
+Func conv_expr(const Expr *expr,
+               JitRuntime &rt,
+               const ExecCtx &ectx);
 
 /* Evaluates an expression from a string.
  * Writes the result to the provided double.

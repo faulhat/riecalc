@@ -8,7 +8,7 @@ using namespace asmjit;
 
 void repl() {
    JitRuntime rt;
-   
+ 
    Expr *expr;
    std::stringstream linestream;
    std::string line;
