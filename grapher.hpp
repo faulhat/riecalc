@@ -11,6 +11,9 @@ class Grapher {
 
    /* The components of the grapher */
    GtkWidget *window,
+             *grid,
+             *expr_entry,
+             *go_button,
              *graphing_area;
    
    /* Objects used for the compilation of expressions. */
@@ -21,23 +24,22 @@ class Grapher {
    /* Sets fn to the expression in the given expr object. */
    void apply_expr(const Expr *expr);
 
-public:
-   /* Sets up window and compilation context. */
-   Grapher();
-
    /* Parses a string with an expression and sets fn.
     * Adds an error message to the dialog if the parser produced an error.
     */
    void apply_fn_str(const char *in);
-
+public:
    /* Displays the window and the graph. */
    void activate_graph();
+   
+   /* Reloads expression from entry area */
+   void reload_expr();
 
    /* Runs the graphing program */
    int run(int argc, char **argv);
 
-   /* Getter for the function field */
-   const Func &getFn() const;
+   /* Redraws the graph */
+   gboolean draw_graph(cairo_t *cr);
 };
 
 #endif
