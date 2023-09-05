@@ -14,7 +14,15 @@ class Grapher {
              *grid,
              *expr_entry,
              *go_button,
-             *graphing_area;
+             *graphing_area,
+             *xmin_entry,
+             *xmax_entry,
+             *ymin_entry,
+             *ymax_entry,
+             *err_area;
+
+   double xmin, xmax,
+          ymin, ymax;
    
    /* Objects used for the compilation of expressions. */
    const ExecCtx ectx;
