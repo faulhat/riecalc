@@ -7,31 +7,70 @@ gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
 }
 
 gboolean Grapher::draw_graph(cairo_t *cr) {
-   static const GdkRGBA RED = {1.0, 0.0, 0.0, 1.0},
+   static const GdkRGBA BLACK = {0.0, 0.0, 0.0, 1.0},
                         FOG = {0.3, 0.3, 0.3, 1.0},
-                        SKY = {135.0/255.0,
-                               206.0/255.0,
-                               235.0/255.0,
-                               1.0};
+			               GREEN = {
+                            57.0 / 255,
+                           255.0 / 255,
+                            20.0 / 255, 1.0},
+                        WHITE = {1.0, 1.0, 1.0, 1.0},
+                        RED = {1.0, 0.0, 0.0, 1.0},
+                        BLUE = {0.0, 0.0, 1.0, 1.0};
+
    GtkStyleContext *ctx = gtk_widget_get_style_context(graphing_area);
    guint width = gtk_widget_get_allocated_width(graphing_area),
          height = gtk_widget_get_allocated_height(graphing_area);
 
    gtk_render_background(ctx, cr, 0, 0, width, height);
 
-   gdk_cairo_set_source_rgba(cr, &SKY);
+   gdk_cairo_set_source_rgba(cr, &BLACK);
    cairo_rectangle(cr, 0, 0, width, height);
    cairo_fill(cr);
 
+   double xrange = xmax - xmin,
+          yrange = ymax - ymin;
+
    gdk_cairo_set_source_rgba(cr, &FOG);
-   double y_zero_line = height * (1 - (-ymin / (ymax - ymin)));
+   cairo_set_line_width(cr, 1);
+   double xlog = std::floor(std::log(xrange) / std::log(10));
+   if (xrange / std::pow(10, xlog) < 5.0) {
+      xlog -= 1.0;
+   }
+
+   double xstep = std::pow(10, xlog);
+   for (double x = xstep * std::ceil(xmin / xstep);
+        x < xmax;
+        x += xstep) {
+      double x_line = width * (x - xmin) / xrange;
+      cairo_move_to(cr, x_line, 0);
+      cairo_line_to(cr, x_line, height);
+      cairo_stroke(cr);
+   }
+
+   double ylog = std::floor(std::log(yrange) / std::log(10));
+   if (yrange / std::pow(10, ylog) < 5.0) {
+      ylog -= 1.0;
+   }
+
+   double ystep = std::pow(10, ylog);
+   for (double y = ystep * std::ceil(ymin / ystep);
+        y < ymax;
+        y += ystep) {
+      double y_line = height * (1 - ((y - ymin) / yrange));
+      cairo_move_to(cr, 0, y_line);
+      cairo_line_to(cr, width, y_line);
+      cairo_stroke(cr);
+   }
+
+   gdk_cairo_set_source_rgba(cr, &WHITE);
+   double y_zero_line = height * (1 - (-ymin / yrange));
    if (y_zero_line > 0 && y_zero_line < height) {
       cairo_move_to(cr, 0, y_zero_line);
       cairo_line_to(cr, width, y_zero_line);
       cairo_stroke(cr);
    }
-
-   double x_zero_line = width * -xmin / (xmax - xmin);
+   
+   double x_zero_line = width * -xmin / xrange;
    if (x_zero_line > 0 && x_zero_line < width) {
       cairo_move_to(cr, x_zero_line, 0);
       cairo_line_to(cr, x_zero_line, height);
@@ -39,12 +78,12 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
    }
 
    if (fn != nullptr) {
-      gdk_cairo_set_source_rgba(cr, &RED);
+      gdk_cairo_set_source_rgba(cr, &GREEN);
 
       for (guint i = 0; i < width; i++) {
-         double x = i * (xmax - xmin) / width + xmin;
+         double x = i * xrange / width + xmin;
          double y = fn(x);
-         int j = (int)(height * (1 - (y - ymin) / (ymax - ymin)));
+         int j = (int)(height * (1 - (y - ymin) / yrange));
          cairo_line_to(cr, i, j);
       }
 
