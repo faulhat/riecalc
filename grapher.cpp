@@ -14,8 +14,8 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
                            255.0 / 255,
                             20.0 / 255, 1.0},
                         WHITE = {1.0, 1.0, 1.0, 1.0},
-                        RED = {1.0, 0.0, 0.0, 1.0},
-                        BLUE = {0.0, 0.0, 1.0, 1.0};
+                        RED_HALF = {1.0, 0.0, 0.0, 0.5},
+                        BLUE_HALF = {0.0, 0.0, 1.0, 0.5};
 
    GtkStyleContext *ctx = gtk_widget_get_style_context(graphing_area);
    guint width = gtk_widget_get_allocated_width(graphing_area),
@@ -93,8 +93,49 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
    return FALSE;
 }
 
+/* get_double_from_gtk_entry
+ * Attempts to get a double from a GtkEntry widget
+ * Fills in an error field and returns false if it failed
+ * Returns true otherwise.
+ */
+bool get_double_from_gtk_entry(GtkWidget *entry,
+                               double *into,
+                               GtkWidget *err_label,
+                               const char *err_msg) {
+   static const char *fmt = "%lf%c";
+   char extra;
+   int tokens = sscanf(gtk_entry_get_text(GTK_ENTRY(entry)),
+                                          fmt, into, &extra);
+   
+   bool failed = tokens != 1;
+   if (failed) {
+      gtk_label_set_text(GTK_LABEL(err_label), err_msg);
+   }
+
+   return !failed;
+}
+
+bool Grapher::load_rs_vars() {
+   // Takes advantage of short-circuiting
+   return get_double_from_gtk_entry(
+            rs_lower_entry,
+            &rs_lower,
+            err_area,
+            "Error: could not parse lower integration bound.")
+      && get_double_from_gtk_entry(
+            rs_upper_entry,
+            &rs_upper,
+            err_area,
+            "Error: could not parse upper integration bound.")
+      && get_double_from_gtk_entry(
+            rs_step_entry,
+            &rs_step,
+            err_area,
+            "Error: could not parse integration step size.");
+}
+
 void activate(GtkApplication *app, gpointer data) {
-   ((Grapher *)data)->activate_graph();
+   ((Grapher *)data)->make_all();
 }
 
 void Grapher::apply_expr(const Expr *expr) {
@@ -128,89 +169,84 @@ void Grapher::apply_fn_str(const char *in) {
 }
 
 void load_expr(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr();
+   ((Grapher *)data)->reload_expr(false);
 }
 
-void Grapher::reload_expr() {
-   const char *fmt = "%lf%c";
-   char extra;
-   int tokens = sscanf(gtk_entry_get_text(GTK_ENTRY(xmin_entry)),
-                                          fmt, &xmin, &extra);
-   if (tokens != 1) {
-      gtk_label_set_text(GTK_LABEL(err_area),
-                         "Error: Could not parse xmin bound.");
-      return;
-   }
-
-   tokens = sscanf(gtk_entry_get_text(GTK_ENTRY(xmax_entry)),
-                                      fmt, &xmax, &extra);
-   if (tokens != 1) {
-      gtk_label_set_text(GTK_LABEL(err_area),
-                         "Error: Could not parse xmax bound.");
-      return;
-   }
-
-   tokens = sscanf(gtk_entry_get_text(GTK_ENTRY(ymin_entry)),
-                                      fmt, &ymin, &extra);
-   if (tokens != 1) {
-      gtk_label_set_text(GTK_LABEL(err_area),
-                         "Error: Could not parse ymin bound.");
-      return;
-   }
-
-   tokens = sscanf(gtk_entry_get_text(GTK_ENTRY(ymax_entry)),
-                                      fmt, &ymax, &extra);
-   if (tokens != 1) {
-      gtk_label_set_text(GTK_LABEL(err_area),
-                         "Error: Could not parse ymax bound.");
-      return;
-   }
-
-   try {
-      const char *expr_str = gtk_entry_get_text(GTK_ENTRY(expr_entry));
-      apply_fn_str(expr_str);
-   } catch (NameResFail *e) {
-      gtk_label_set_text(GTK_LABEL(err_area), e->what());
-      delete e;
-      return;
-   } catch (ParseError *e) {
-      gtk_label_set_text(GTK_LABEL(err_area), e->what());
-      delete e;
-      return;
-   }
+void Grapher::reload_expr(bool rs) {
+   do_rs = rs;
 
    gtk_label_set_text(GTK_LABEL(err_area), "");
-   gtk_widget_queue_draw(graphing_area);
+   bool all_parsed =
+      get_double_from_gtk_entry(
+         xmin_entry,
+         &xmin,
+         err_area,
+         "Error: could not parse xmin.")
+   && get_double_from_gtk_entry(
+         xmax_entry,
+         &xmax,
+         err_area,
+         "Error: could not parse xmax.")
+   && get_double_from_gtk_entry(
+         ymin_entry,
+         &ymin,
+         err_area,
+         "Error: could not parse ymin.")
+   && get_double_from_gtk_entry(
+         ymax_entry,
+         &ymax,
+         err_area,
+         "Error: could not parse ymax.");
+
+   if (all_parsed) {
+      if (do_rs) {
+         // Only include riemann sum if parsing those vars succeeds
+         do_rs = load_rs_vars();
+      }
+
+      try {
+         const char *expr_str = gtk_entry_get_text(GTK_ENTRY(expr_entry));
+         apply_fn_str(expr_str);
+
+         gtk_widget_queue_draw(graphing_area);
+      } catch (NameResFail *e) {
+         gtk_label_set_text(GTK_LABEL(err_area), e->what());
+         delete e;
+      } catch (ParseError *e) {
+         gtk_label_set_text(GTK_LABEL(err_area), e->what());
+         delete e;
+      }
+   }
 }
 
-void Grapher::activate_graph() {
-   window = gtk_application_window_new(app);
-   gtk_window_set_title(GTK_WINDOW(window), "Grapher");
-   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
-
-   grid = gtk_grid_new();
-   gtk_container_add(GTK_CONTAINER(window), grid);
-
+void Grapher::make_grapher() {
    GtkWidget *expr_label = gtk_label_new("Enter an expression in terms of x:");
-   gtk_grid_attach(GTK_GRID(grid), expr_label, 0, 0, 1, 1);
+   gtk_widget_set_halign(expr_label, GTK_ALIGN_START);
+   gtk_grid_attach(GTK_GRID(grid), expr_label, 0, 0, 7, 1);
    
    expr_entry = gtk_entry_new();
-   gtk_entry_set_max_length(GTK_ENTRY(expr_entry), 0);
    gtk_grid_attach(GTK_GRID(grid), expr_entry, 0, 1, 4, 1);
    g_signal_connect(G_OBJECT(expr_entry), "activate",
                     G_CALLBACK(load_expr), this);
    
-   go_button = gtk_button_new_with_label("Go");
+   GtkWidget *go_button = gtk_button_new_with_label("Go");
    gtk_grid_attach(GTK_GRID(grid), go_button, 4, 1, 1, 1);
    g_signal_connect(G_OBJECT(go_button), "clicked",
                     G_CALLBACK(load_expr), this);
 
    graphing_area = gtk_drawing_area_new();
-   gtk_widget_set_size_request(graphing_area, 1000, 500);
+   gtk_widget_set_size_request(graphing_area, 500, 400);
+   gtk_widget_set_vexpand(graphing_area, TRUE);
+   gtk_widget_set_hexpand(graphing_area, TRUE);
+   gtk_widget_set_valign(graphing_area, GTK_ALIGN_CENTER);
+   gtk_widget_set_halign(graphing_area, GTK_ALIGN_CENTER);
+   
    gtk_grid_attach(GTK_GRID(grid), graphing_area, 0, 2, 5, 5);
    g_signal_connect(G_OBJECT(graphing_area), "draw",
                     G_CALLBACK(draw), this);
+}
 
+void Grapher::make_settings() {
    GtkWidget *xmin_label = gtk_label_new("xMin");
    gtk_grid_attach(GTK_GRID(grid), xmin_label, 1, 7, 1, 1);
 
@@ -227,7 +263,6 @@ void Grapher::activate_graph() {
    gtk_grid_attach(GTK_GRID(grid), dim_label, 0, 8, 1, 1);
 
    xmin_entry = gtk_entry_new();
-   gtk_entry_set_max_length(GTK_ENTRY(xmin_entry), 0);
    gtk_entry_set_text(GTK_ENTRY(xmin_entry), "-10.0");
    gtk_grid_attach(GTK_GRID(grid), xmin_entry, 1, 8, 1, 1);
    g_signal_connect(G_OBJECT(xmin_entry), "activate",
@@ -235,7 +270,6 @@ void Grapher::activate_graph() {
    xmin = -10.0;
 
    xmax_entry = gtk_entry_new();
-   gtk_entry_set_max_length(GTK_ENTRY(xmax_entry), 0);
    gtk_entry_set_text(GTK_ENTRY(xmax_entry), "10.0");
    gtk_grid_attach(GTK_GRID(grid), xmax_entry, 2, 8, 1, 1);
    g_signal_connect(G_OBJECT(xmax_entry), "activate",
@@ -243,7 +277,6 @@ void Grapher::activate_graph() {
    xmax = 10.0;
 
    ymin_entry = gtk_entry_new();
-   gtk_entry_set_max_length(GTK_ENTRY(ymin_entry), 0);
    gtk_entry_set_text(GTK_ENTRY(ymin_entry), "-10.0");
    gtk_grid_attach(GTK_GRID(grid), ymin_entry, 3, 8, 1, 1);
    g_signal_connect(G_OBJECT(ymin_entry), "activate",
@@ -251,7 +284,6 @@ void Grapher::activate_graph() {
    ymin = -10.0;
 
    ymax_entry = gtk_entry_new();
-   gtk_entry_set_max_length(GTK_ENTRY(ymax_entry), 0);
    gtk_entry_set_text(GTK_ENTRY(ymax_entry), "10.0");
    gtk_grid_attach(GTK_GRID(grid), ymax_entry, 4, 8, 1, 1);
    g_signal_connect(G_OBJECT(ymax_entry), "activate",
@@ -259,8 +291,68 @@ void Grapher::activate_graph() {
    ymax = 10.0;
 
    err_area = gtk_label_new("");
-   gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 1, 1);
+   gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 8, 1);
+}
 
+void load_expr_rs(GtkWidget *widget, gpointer data) {
+   ((Grapher *)data)->reload_expr(true);
+}
+
+void Grapher::make_analysis() {
+   GtkWidget *analysis_nb = gtk_notebook_new();
+   gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 7);
+   
+   GtkWidget *rs_grid = gtk_grid_new();
+   gtk_grid_set_row_spacing(GTK_GRID(rs_grid), 10);
+   
+   GtkWidget *rs_label = gtk_label_new("Riemann");
+   gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
+                            rs_grid,
+                            rs_label);
+   
+   GtkWidget *rs_lower_label = gtk_label_new("Lower bound:");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_lower_label, 0, 0, 1, 1);
+   
+   rs_lower_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_lower_entry, 0, 1, 1, 1);
+   g_signal_connect(G_OBJECT(rs_lower_entry), "activate",
+                    G_CALLBACK(load_expr_rs), this);
+
+   GtkWidget *rs_upper_label = gtk_label_new("Upper bound:");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_upper_label, 0, 2, 1, 1);
+
+   rs_upper_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_upper_entry, 0, 3, 1, 1);
+   g_signal_connect(G_OBJECT(rs_upper_entry), "activate",
+                    G_CALLBACK(load_expr_rs), this);
+
+   GtkWidget *rs_step_label = gtk_label_new("Step size:");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_step_label, 0, 4, 1, 1);
+
+   rs_step_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_step_entry, 0, 5, 1, 1);
+   g_signal_connect(G_OBJECT(rs_step_entry), "activate",
+                    G_CALLBACK(load_expr_rs), this);
+
+   GtkWidget *sum_button = gtk_button_new_with_label("Sum");
+   gtk_grid_attach(GTK_GRID(rs_grid), sum_button, 0, 6, 1, 1);
+   g_signal_connect(G_OBJECT(sum_button), "clicked",
+                    G_CALLBACK(load_expr_rs), this);
+}
+
+void Grapher::make_all() {
+   GtkWidget *window = gtk_application_window_new(app);
+   gtk_window_set_title(GTK_WINDOW(window), "Grapher");
+   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
+
+   grid = gtk_grid_new();
+   gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
+   gtk_container_add(GTK_CONTAINER(window), grid);
+
+   make_grapher();
+   make_settings();
+   make_analysis();
+   
    gtk_widget_show_all(window);
 }
 
