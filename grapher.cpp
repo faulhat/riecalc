@@ -77,45 +77,47 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
       cairo_stroke(cr);
    }
 
-   if (do_rs) {
-      double sum = 0;
-      double step_width = width * rs_step / xrange;
-      double next_x = width * (rs_lower - xmin) / xrange;
-      for (double x = rs_lower;
-           x < rs_upper;
-           x += rs_step) {
-         double y = fn(x + rs_step / 2.0);
-         sum += rs_step * y;
-        
-         double x_lo_line = width * (x - xmin) / xrange;
-         if (x_lo_line + step_width >= next_x) {
-            next_x = x_lo_line + step_width;
-            double y_line = height * (1 - (y - ymin) / yrange);
-            if (y < 0) {
-               gdk_cairo_set_source_rgba(cr, &BLUE_HALF);
-               cairo_rectangle(cr,
-                               x_lo_line, y_zero_line,
-                               std::ceil(step_width),
-                               y_line - y_zero_line);
-            } else {
-               gdk_cairo_set_source_rgba(cr, &RED_HALF);
-               cairo_rectangle(cr,
-                               x_lo_line, y_line,
-                               std::ceil(step_width),
-                               y_zero_line - y_line);
-            }
-
-            cairo_fill(cr);
-         }
-      }
-         
-      std::string res = std::to_string(sum);
-      gtk_label_set_text(GTK_LABEL(rs_res_area), res.c_str());
-   }
 
    if (fn != nullptr) {
-      gdk_cairo_set_source_rgba(cr, &GREEN);
+      if (do_rs) {
+         double sum = 0;
+         int last_x_line = (int) std::floor(width * (rs_lower - rs_step - xmin) / xrange);
+         int step_width = (int) std::ceil(width * rs_step / xrange);
+         for (double x = rs_lower;
+              x < rs_upper;
+              x += rs_step) {
+            double y = fn(x + rs_step / 2.0);
+            sum += rs_step * y;
 
+            int x_lo_line = (int) std::floor(width * (x - xmin) / xrange);
+            if (x_lo_line - last_x_line >= step_width) {
+               double y_line = height * (1 - (y - ymin) / yrange);
+               if (y < 0) {
+                  gdk_cairo_set_source_rgba(cr, &BLUE_HALF);
+                  cairo_rectangle(cr,
+                                  last_x_line + step_width,
+                                  y_zero_line,
+                                  x_lo_line - last_x_line,
+                                  y_line - y_zero_line);
+               } else {
+                  gdk_cairo_set_source_rgba(cr, &RED_HALF);
+                  cairo_rectangle(cr,
+                                  last_x_line + step_width,
+                                  y_line,
+                                  x_lo_line - last_x_line,
+                                  y_zero_line - y_line);
+               }
+
+               cairo_fill(cr);
+               last_x_line = x_lo_line;
+            }
+         }
+            
+         std::string res = std::to_string(sum);
+         gtk_label_set_text(GTK_LABEL(rs_res_area), res.c_str());
+      }
+
+      gdk_cairo_set_source_rgba(cr, &GREEN);
       for (guint i = 0; i < width; i++) {
          double x = i * xrange / width + xmin;
          double y = fn(x);
@@ -176,7 +178,7 @@ bool Grapher::load_rs_vars() {
          gtk_label_set_text(GTK_LABEL(err_area),
                             "Error: flipped integration bounds.");
          failed = true;
-      } else if (rs_step <= 1e-5) {
+      } else if (rs_step < 1e-5) {
          gtk_label_set_text(GTK_LABEL(err_area),
                             "Error: step size too small.");
          failed = true;
@@ -346,7 +348,7 @@ void Grapher::make_settings() {
    ymax = 10.0;
 
    err_area = gtk_label_new("");
-   gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 8, 1);
+   gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 5, 1);
 }
 
 void load_expr_rs(GtkWidget *widget, gpointer data) {
@@ -355,7 +357,7 @@ void load_expr_rs(GtkWidget *widget, gpointer data) {
 
 void Grapher::make_analysis() {
    GtkWidget *analysis_nb = gtk_notebook_new();
-   gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 9);
+   gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 8);
    
    GtkWidget *rs_grid = gtk_grid_new();
    gtk_grid_set_row_spacing(GTK_GRID(rs_grid), 10);
