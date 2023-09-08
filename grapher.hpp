@@ -26,7 +26,8 @@ class Grapher {
    /* Components of the analysis menu */
    GtkWidget *rs_lower_entry,
              *rs_upper_entry,
-             *rs_step_entry;
+             *rs_step_entry,
+             *rs_res_area;
 
    /* Riemann summation input data */
    double rs_lower, rs_upper, rs_step;
@@ -71,7 +72,6 @@ public:
 
    /* Redraws the graph */
    gboolean draw_graph(cairo_t *cr);
-
 };
 
 #endif

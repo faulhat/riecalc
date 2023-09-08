@@ -77,6 +77,42 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
       cairo_stroke(cr);
    }
 
+   if (do_rs) {
+      double sum = 0;
+      double step_width = width * rs_step / xrange;
+      double next_x = width * (rs_lower - xmin) / xrange;
+      for (double x = rs_lower;
+           x < rs_upper;
+           x += rs_step) {
+         double y = fn(x + rs_step / 2.0);
+         sum += rs_step * y;
+        
+         double x_lo_line = width * (x - xmin) / xrange;
+         if (x_lo_line + step_width >= next_x) {
+            next_x = x_lo_line + step_width;
+            double y_line = height * (1 - (y - ymin) / yrange);
+            if (y < 0) {
+               gdk_cairo_set_source_rgba(cr, &BLUE_HALF);
+               cairo_rectangle(cr,
+                               x_lo_line, y_zero_line,
+                               std::ceil(step_width),
+                               y_line - y_zero_line);
+            } else {
+               gdk_cairo_set_source_rgba(cr, &RED_HALF);
+               cairo_rectangle(cr,
+                               x_lo_line, y_line,
+                               std::ceil(step_width),
+                               y_zero_line - y_line);
+            }
+
+            cairo_fill(cr);
+         }
+      }
+         
+      std::string res = std::to_string(sum);
+      gtk_label_set_text(GTK_LABEL(rs_res_area), res.c_str());
+   }
+
    if (fn != nullptr) {
       gdk_cairo_set_source_rgba(cr, &GREEN);
 
@@ -117,7 +153,8 @@ bool get_double_from_gtk_entry(GtkWidget *entry,
 
 bool Grapher::load_rs_vars() {
    // Takes advantage of short-circuiting
-   return get_double_from_gtk_entry(
+   bool parsed =
+         get_double_from_gtk_entry(
             rs_lower_entry,
             &rs_lower,
             err_area,
@@ -132,6 +169,21 @@ bool Grapher::load_rs_vars() {
             &rs_step,
             err_area,
             "Error: could not parse integration step size.");
+   
+   bool failed = !parsed;
+   if (parsed) {
+      if (rs_upper <= rs_lower) {
+         gtk_label_set_text(GTK_LABEL(err_area),
+                            "Error: flipped integration bounds.");
+         failed = true;
+      } else if (rs_step <= 1e-5) {
+         gtk_label_set_text(GTK_LABEL(err_area),
+                            "Error: step size too small.");
+         failed = true;
+      }
+   }
+
+   return !failed;
 }
 
 void activate(GtkApplication *app, gpointer data) {
@@ -174,6 +226,9 @@ void load_expr(GtkWidget *widget, gpointer data) {
 
 void Grapher::reload_expr(bool rs) {
    do_rs = rs;
+   if (!do_rs) {
+      gtk_label_set_text(GTK_LABEL(rs_res_area), "");
+   }
 
    gtk_label_set_text(GTK_LABEL(err_area), "");
    bool all_parsed =
@@ -300,7 +355,7 @@ void load_expr_rs(GtkWidget *widget, gpointer data) {
 
 void Grapher::make_analysis() {
    GtkWidget *analysis_nb = gtk_notebook_new();
-   gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 7);
+   gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 9);
    
    GtkWidget *rs_grid = gtk_grid_new();
    gtk_grid_set_row_spacing(GTK_GRID(rs_grid), 10);
@@ -338,6 +393,12 @@ void Grapher::make_analysis() {
    gtk_grid_attach(GTK_GRID(rs_grid), sum_button, 0, 6, 1, 1);
    g_signal_connect(G_OBJECT(sum_button), "clicked",
                     G_CALLBACK(load_expr_rs), this);
+
+   GtkWidget *rs_res_label = gtk_label_new("Integral estimate:");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_label, 0, 7, 2, 1);
+
+   rs_res_area = gtk_label_new("");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_area, 0, 8, 1, 1);
 }
 
 void Grapher::make_all() {
