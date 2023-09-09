@@ -92,6 +92,12 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
             int x_lo_line = (int) std::floor(width * (x - xmin) / xrange);
             if (x_lo_line - last_x_line >= step_width) {
                double y_line = height * (1 - (y - ymin) / yrange);
+               if (y_line < 0) {
+                  y_line = 0;
+               } else if (y_line > height) {
+                  y_line = height;
+               }
+
                if (y < 0) {
                   gdk_cairo_set_source_rgba(cr, &BLUE_HALF);
                   cairo_rectangle(cr,
@@ -118,11 +124,22 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
       }
 
       gdk_cairo_set_source_rgba(cr, &GREEN);
+      bool offscreen = false;
       for (guint i = 0; i < width; i++) {
          double x = i * xrange / width + xmin;
          double y = fn(x);
          int j = (int)(height * (1 - (y - ymin) / yrange));
-         cairo_line_to(cr, i, j);
+         if (j < 0 || j > (int)height) {
+            if (offscreen) {
+               cairo_move_to(cr, i, j);
+            } else {
+               cairo_line_to(cr, i, j);
+               offscreen = true;
+            }
+         } else {
+            cairo_line_to(cr, i, j);
+            offscreen = false;
+         }
       }
 
       cairo_stroke(cr);
