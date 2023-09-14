@@ -172,7 +172,7 @@ bool get_double_from_gtk_entry(GtkWidget *entry,
 
 bool Grapher::load_rs_vars() {
    // Takes advantage of short-circuiting
-   bool parsed =
+   bool success =
          get_double_from_gtk_entry(
             rs_lower_entry,
             &rs_lower,
@@ -189,20 +189,19 @@ bool Grapher::load_rs_vars() {
             err_area,
             "Error: could not parse integration step size.");
    
-   bool failed = !parsed;
-   if (parsed) {
+   if (success) {
       if (rs_upper <= rs_lower) {
          gtk_label_set_text(GTK_LABEL(err_area),
                             "Error: flipped integration bounds.");
-         failed = true;
+         success = false;
       } else if (rs_step < 1e-5) {
          gtk_label_set_text(GTK_LABEL(err_area),
                             "Error: step size too small.");
-         failed = true;
+         success = false;
       }
    }
 
-   return !failed;
+   return success;
 }
 
 void activate(GtkApplication *app, gpointer data) {
@@ -224,8 +223,10 @@ void Grapher::apply_fn_str(const char *in) {
    yy_scan_string(in);
    yyparse(&expr, &funcname, &varname, &err);
    
-   // TODO: fix this idk
-   if (err != nullptr) return;
+   if (err != nullptr) {
+      gtk_label_set_text(GTK_LABEL(err_area), err);
+      return;
+   }
 
    apply_expr(expr);
 
