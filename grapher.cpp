@@ -14,6 +14,7 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
                            255.0 / 255,
                             20.0 / 255, 1.0},
                         WHITE = {1.0, 1.0, 1.0, 1.0},
+                        RED = {1.0, 0.0, 0.0, 1.0},
                         RED_HALF = {1.0, 0.0, 0.0, 0.5},
                         BLUE_HALF = {0.0, 0.0, 1.0, 0.5};
 
@@ -143,6 +144,20 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
       }
 
       cairo_stroke(cr);
+
+      if (do_tr) {
+         gdk_cairo_set_source_rgba(cr, &RED);
+         cairo_set_line_width(cr, 5);
+
+         int i = (int)(width * (tr_xval - xmin) / xrange);
+         double y = fn(tr_xval);
+         int j = (int)(height * (1 - (y - ymin) / yrange));
+         cairo_arc(cr, i, j, 5, 0, 2 * G_PI);
+         cairo_stroke(cr);
+
+         std::string res = std::to_string(y);
+         gtk_label_set_text(GTK_LABEL(tr_res_area), res.c_str());
+      }
    }
 
    return FALSE;
@@ -168,6 +183,14 @@ bool get_double_from_gtk_entry(GtkWidget *entry,
    }
 
    return !failed;
+}
+
+bool Grapher::load_xval() {
+   return get_double_from_gtk_entry(
+            tr_xval_entry,
+            &tr_xval,
+            err_area,
+            "Error: could not parse x value for trace.");
 }
 
 bool Grapher::load_rs_vars() {
@@ -241,11 +264,17 @@ void Grapher::apply_fn_str(const char *in) {
 }
 
 void load_expr(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(false);
+   ((Grapher *)data)->reload_expr(false, false);
 }
 
-void Grapher::reload_expr(bool rs) {
-   do_rs = rs;
+void Grapher::reload_expr(bool trace, bool rsum) {
+   do_tr = trace;
+   do_rs = rsum;
+
+   if (!do_tr) {
+      gtk_label_set_text(GTK_LABEL(tr_res_area), "");
+   }
+
    if (!do_rs) {
       gtk_label_set_text(GTK_LABEL(rs_res_area), "");
    }
@@ -277,6 +306,8 @@ void Grapher::reload_expr(bool rs) {
       if (do_rs) {
          // Only include riemann sum if parsing those vars succeeds
          do_rs = load_rs_vars();
+      } else if (do_tr) {
+         do_tr = load_xval();
       }
 
       try {
@@ -369,18 +400,49 @@ void Grapher::make_settings() {
    gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 5, 1);
 }
 
+void load_expr_tr(GtkWidget *widget, gpointer data) {
+   ((Grapher *)data)->reload_expr(true, false);
+}
+
 void load_expr_rs(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(true);
+   ((Grapher *)data)->reload_expr(false, true);
 }
 
 void Grapher::make_analysis() {
    GtkWidget *analysis_nb = gtk_notebook_new();
    gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 8);
    
+   GtkWidget *tr_grid = gtk_grid_new();
+   gtk_grid_set_row_spacing(GTK_GRID(tr_grid), 10);
+
+   GtkWidget *tr_label = gtk_label_new("Trace");
+   gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
+                            tr_grid,
+                            tr_label);
+
+   GtkWidget *tr_xval_label = gtk_label_new("x =");
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_xval_label, 0, 1, 1, 1);
+
+   tr_xval_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_xval_entry, 0, 2, 1, 1);
+   g_signal_connect(G_OBJECT(tr_xval_entry), "activate",
+                    G_CALLBACK(load_expr_tr), this);
+
+   GtkWidget *trace_button = gtk_button_new_with_label("Find");
+   gtk_grid_attach(GTK_GRID(tr_grid), trace_button, 0, 3, 1, 1);
+   g_signal_connect(G_OBJECT(trace_button), "clicked",
+                    G_CALLBACK(load_expr_tr), this);
+   
+   GtkWidget *tr_res_label = gtk_label_new("y =");
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_res_label, 0, 4, 1, 1);
+
+   tr_res_area = gtk_label_new("");
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_res_area, 0, 5, 1, 1);
+
    GtkWidget *rs_grid = gtk_grid_new();
    gtk_grid_set_row_spacing(GTK_GRID(rs_grid), 10);
    
-   GtkWidget *rs_label = gtk_label_new("Riemann");
+   GtkWidget *rs_label = gtk_label_new("RSum");
    gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
                             rs_grid,
                             rs_label);

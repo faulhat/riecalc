@@ -10,7 +10,7 @@ class Grapher {
    GtkApplication *app;
 
    /* The components of the grapher */
-   GtkWidget  *grid,
+   GtkWidget *grid,
              *expr_entry,
              *graphing_area,
              *xmin_entry,
@@ -22,6 +22,13 @@ class Grapher {
    /* Graph window settings */
    double xmin, xmax,
           ymin, ymax;
+
+   /* Components of the trace menu */
+   GtkWidget *tr_xval_entry,
+             *tr_res_area;
+
+   /* x value for trace */
+   double tr_xval;
 
    /* Components of the analysis menu */
    GtkWidget *rs_lower_entry,
@@ -37,8 +44,14 @@ class Grapher {
    JitRuntime rt;
    Func fn;
 
+   /* Flag telling draw function to incorporate trace */
+   bool do_tr;
+
    /* Flag telling draw function to incorporate riemann sum */
    bool do_rs;
+
+   /* Loads x-value for trace */
+   bool load_xval();
 
    /* Loads riemann sum vars */
    bool load_rs_vars();
@@ -65,7 +78,7 @@ public:
    void make_all();
    
    /* Reloads expression from entry area */
-   void reload_expr(bool rs);
+   void reload_expr(bool trace, bool rsum);
 
    /* Runs the graphing program */
    int run(int argc, char **argv);
