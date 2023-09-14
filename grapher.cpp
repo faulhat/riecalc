@@ -147,7 +147,7 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
 
       if (do_tr) {
          gdk_cairo_set_source_rgba(cr, &RED);
-         cairo_set_line_width(cr, 5);
+         cairo_set_line_width(cr, 2);
 
          int i = (int)(width * (tr_xval - xmin) / xrange);
          double y = fn(tr_xval);
@@ -413,34 +413,41 @@ void Grapher::make_analysis() {
    gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 8);
    
    GtkWidget *tr_grid = gtk_grid_new();
-   gtk_grid_set_row_spacing(GTK_GRID(tr_grid), 10);
+   gtk_grid_set_row_spacing(GTK_GRID(tr_grid), 15);
+   gtk_grid_set_column_spacing(GTK_GRID(tr_grid), 10);
+   gtk_widget_set_margin_top(tr_grid, 10);
+   gtk_widget_set_margin_left(tr_grid, 10);
+   gtk_widget_set_margin_right(tr_grid, 10);
 
-   GtkWidget *tr_label = gtk_label_new("Trace");
+   GtkWidget *tr_label = gtk_label_new("Eval");
    gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
                             tr_grid,
                             tr_label);
 
    GtkWidget *tr_xval_label = gtk_label_new("x =");
-   gtk_grid_attach(GTK_GRID(tr_grid), tr_xval_label, 0, 1, 1, 1);
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_xval_label, 0, 0, 2, 1);
 
    tr_xval_entry = gtk_entry_new();
-   gtk_grid_attach(GTK_GRID(tr_grid), tr_xval_entry, 0, 2, 1, 1);
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_xval_entry, 2, 0, 2, 1);
    g_signal_connect(G_OBJECT(tr_xval_entry), "activate",
                     G_CALLBACK(load_expr_tr), this);
 
    GtkWidget *trace_button = gtk_button_new_with_label("Find");
-   gtk_grid_attach(GTK_GRID(tr_grid), trace_button, 0, 3, 1, 1);
+   gtk_grid_attach(GTK_GRID(tr_grid), trace_button, 2, 1, 1, 1);
    g_signal_connect(G_OBJECT(trace_button), "clicked",
                     G_CALLBACK(load_expr_tr), this);
    
    GtkWidget *tr_res_label = gtk_label_new("y =");
-   gtk_grid_attach(GTK_GRID(tr_grid), tr_res_label, 0, 4, 1, 1);
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_res_label, 0, 2, 2, 1);
 
    tr_res_area = gtk_label_new("");
-   gtk_grid_attach(GTK_GRID(tr_grid), tr_res_area, 0, 5, 1, 1);
+   gtk_grid_attach(GTK_GRID(tr_grid), tr_res_area, 2, 2, 2, 1);
 
    GtkWidget *rs_grid = gtk_grid_new();
    gtk_grid_set_row_spacing(GTK_GRID(rs_grid), 10);
+   gtk_widget_set_margin_top(rs_grid, 10);
+   gtk_widget_set_margin_left(rs_grid, 10);
+   gtk_widget_set_margin_right(rs_grid, 0);
    
    GtkWidget *rs_label = gtk_label_new("RSum");
    gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
@@ -477,7 +484,7 @@ void Grapher::make_analysis() {
                     G_CALLBACK(load_expr_rs), this);
 
    GtkWidget *rs_res_label = gtk_label_new("Integral estimate:");
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_label, 0, 7, 2, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_label, 0, 7, 1, 1);
 
    rs_res_area = gtk_label_new("");
    gtk_grid_attach(GTK_GRID(rs_grid), rs_res_area, 0, 8, 1, 1);
