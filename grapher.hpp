@@ -1,3 +1,21 @@
+/*
+ * This file is part of the Riemann Project.
+ * Developed by Tom Faulhaber for personal use.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>. 
+ */
+
 #ifndef GRAPHER_HPP
 #define GRAPHER_HPP
 
@@ -50,40 +68,80 @@ class Grapher {
    /* Flag telling draw function to incorporate riemann sum */
    bool do_rs;
 
-   /* Loads x-value for trace */
+   /**
+    * Loads x value for trace function
+    *
+    * @return true if there were no errors
+    */
    bool load_xval();
 
-   /* Loads riemann sum vars */
+   /**
+    * Loads riemann sum vars
+    *
+    * @return true if there were no errors
+    */
    bool load_rs_vars();
 
-   /* Sets fn to the expression in the given expr object. */
+   /**
+    * Sets the function being graphed
+    *
+    * @param expr The new expression
+    */
    void apply_expr(const Expr *expr);
 
-   /* Parses a string with an expression and sets fn.
-    * Adds an error message to the dialog if the parser produced an error.
+   /**
+    * Parses an expression string and graphs the expression
+    *
+    * @param in The input string
     */
    void apply_fn_str(const char *in);
 
-   /* Constructs the graphing area */
+   /**
+    * Constructs the graphing area
+    */
    void make_grapher();
 
-   /* Constructs the window settings area */
+   /**
+    * Constructs the window settings area
+    */
    void make_settings();
 
-   /* Constructs the analysis menu */
+   /**
+    * Constructs the analysis menu 
+    */
    void make_analysis();
 
 public:
-   /* Constructs the full UI */
+   /**
+    * Constructs the full grapher UI 
+    */
    void make_all();
    
-   /* Reloads expression from entry area */
+   /**
+    * Reloads expression from entry area
+    *
+    * @param trace Whether or not to apply the trace function
+    * @param rsum Whether or not to take a Riemann sum
+    */
    void reload_expr(bool trace, bool rsum);
 
-   /* Runs the graphing program */
+   /**
+    * Runs the graphing program
+    *
+    * @param argc Command line arg count, passed to GTK
+    * @param argv Command line args, passed to GTK
+    *
+    * @return GTK status
+    */
    int run(int argc, char **argv);
 
-   /* Redraws the graph */
+   /**
+    * Redraws the graph
+    *
+    * @param cr The cairo surface supplied by GTK
+    *
+    * @return FALSE
+    */
    gboolean draw_graph(cairo_t *cr);
 };
 

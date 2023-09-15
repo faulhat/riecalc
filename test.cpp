@@ -1,3 +1,21 @@
+/*
+ * This file is part of the Riemann Project.
+ * Developed by Tom Faulhaber for personal use.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>. 
+ */
+
 extern "C" {
    #include "expr.h"
 }
@@ -7,6 +25,17 @@ extern "C" {
 #include <cassert>
 #include <map>
 
+/**
+ * Tests to make sure an expression produces the expected result.
+ *
+ * @param rt The asmjit runtime
+ * @param in The expression in string form
+ * @param ectx The relevant symbol tables
+ * @param ctr The counter for how many tests have been run
+ * @param fails The counter for how many tests have failed
+ * @param expected The expected value of the expression
+ * @param delta Error tolerance
+ */
 void test_expr(JitRuntime &rt,
                const char *in,
                ExecCtx &ectx,
@@ -52,6 +81,17 @@ void test_expr(JitRuntime &rt,
    destroy_expr(expr);
 }
 
+/**
+ * Tests if two expressions are equal
+ *
+ * @param rt The asmjit runtime
+ * @param in_a The first expression in string form
+ * @param in_b The second expression in string form
+ * @param ectx The relevant symbol tables
+ * @param ctr The counter for how many tests have been run
+ * @param fails The counter for how many tests have failed
+ * @param delta Error tolerance
+ */
 void test_equal(JitRuntime &rt,
                 const char *in_a,
                 const char *in_b,
@@ -93,6 +133,11 @@ void test_equal(JitRuntime &rt,
    destroy_expr(expr_b);
 }  
 
+/**
+ * Runs a series of tests for the expression evaluation program.
+ *
+ * @return The number of tests which failed.
+ */
 int run_tests() {
    JitRuntime rt;
 

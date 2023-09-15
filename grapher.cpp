@@ -1,7 +1,36 @@
+/*
+ * This file is part of the Riemann Project.
+ * Developed by Tom Faulhaber for personal use.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>. 
+ */
+
 #include "grapher.hpp"
 
 #include <cmath>
 
+/**
+ * "draw" callback for the graphing area.
+ * Just calls the Grapher class's internal method,
+ * since it needs access to the other widgets of the display
+ *
+ * @param widget Should always be the main graphing area
+ * @param cr The cairo surface supplied by GTK
+ * @param data A pointer to the underlying Grapher object
+ *
+ * @return FALSE
+ */
 gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
    return ((Grapher *)data)->draw_graph(cr);
 }
@@ -33,6 +62,10 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
 
    gdk_cairo_set_source_rgba(cr, &FOG);
    cairo_set_line_width(cr, 1);
+
+   // The guideline grid should always have a reasonable number of lines onscreen.
+   // That's what this calculation and the equivalent below for the y-axis are for.
+   // There ought to be an average of 10 lines along either axis.
    double xlog = std::floor(std::log(xrange) / std::log(10));
    if (xrange / std::pow(10, xlog) < 5.0) {
       xlog -= 1.0;
@@ -88,10 +121,13 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
               x < rs_upper;
               x += rs_step) {
             double y = fn(x + rs_step / 2.0);
+            // NaNs are skipped in both the calculation of the sum and the drawing.
             if (!std::isnan(y)) {
                sum += rs_step * y;
             }
 
+            // Drawing a rectangle for every point gets too expensive at low step sizes.
+            // This makes sure only 1 rectangle is drawn per pixel wide.
             int x_lo_line = (int) std::floor(width * (x - xmin) / xrange);
             if (x_lo_line - last_x_line >= step_width) {
                if (!std::isnan(y)) {
@@ -148,7 +184,8 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
                cairo_line_to(cr, i, j);
                offscreen = false;
             }
-         } else {
+         } else if (!offscreen) {
+            // Discontinuity
             cairo_stroke(cr);
             offscreen = true;
          }
@@ -176,10 +213,16 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
    return FALSE;
 }
 
-/* get_double_from_gtk_entry
+/**
  * Attempts to get a double from a GtkEntry widget
- * Fills in an error field and returns false if it failed
- * Returns true otherwise.
+ * Fills in an error field if it failed
+ *
+ * @param entry The widget to take input from
+ * @param into Where to return the value
+ * @param err_label Where to write the error message to
+ * @param err_msg The message to write
+ *
+ * @return true if no error was produced.
  */
 bool get_double_from_gtk_entry(GtkWidget *entry,
                                double *into,
@@ -240,6 +283,12 @@ bool Grapher::load_rs_vars() {
    return success;
 }
 
+/**
+ * "activate" callback for the entire grapher.
+ *
+ * @param app The underlying application
+ * @param data A pointer to the Grapher object itself
+ */
 void activate(GtkApplication *app, gpointer data) {
    ((Grapher *)data)->make_all();
 }
@@ -276,6 +325,12 @@ void Grapher::apply_fn_str(const char *in) {
    yylex_destroy();
 }
 
+/**
+ * Callback to reload expression and redraw graph
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
 void load_expr(GtkWidget *widget, gpointer data) {
    ((Grapher *)data)->reload_expr(false, false);
 }
@@ -413,10 +468,22 @@ void Grapher::make_settings() {
    gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 5, 1);
 }
 
+/**
+ * Callback to reload expression and redraw graph with trace.
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
 void load_expr_tr(GtkWidget *widget, gpointer data) {
    ((Grapher *)data)->reload_expr(true, false);
 }
 
+/**
+ * Callback to reload expression and redraw graph with Riemann sum view
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
 void load_expr_rs(GtkWidget *widget, gpointer data) {
    ((Grapher *)data)->reload_expr(false, true);
 }
