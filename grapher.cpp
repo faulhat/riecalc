@@ -88,34 +88,39 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
               x < rs_upper;
               x += rs_step) {
             double y = fn(x + rs_step / 2.0);
-            sum += rs_step * y;
+            if (!std::isnan(y)) {
+               sum += rs_step * y;
+            }
 
             int x_lo_line = (int) std::floor(width * (x - xmin) / xrange);
             if (x_lo_line - last_x_line >= step_width) {
-               double y_line = height * (1 - (y - ymin) / yrange);
-               if (y_line < 0) {
-                  y_line = 0;
-               } else if (y_line > height) {
-                  y_line = height;
+               if (!std::isnan(y)) {
+                  double y_line = height * (1 - (y - ymin) / yrange);
+                  if (y_line < 0) {
+                     y_line = 0;
+                  } else if (y_line > height) {
+                     y_line = height;
+                  }
+
+                  if (y < 0) {
+                     gdk_cairo_set_source_rgba(cr, &BLUE_HALF);
+                     cairo_rectangle(cr,
+                                     last_x_line + step_width,
+                                     y_zero_line,
+                                     x_lo_line - last_x_line,
+                                     y_line - y_zero_line);
+                  } else {
+                     gdk_cairo_set_source_rgba(cr, &RED_HALF);
+                     cairo_rectangle(cr,
+                                     last_x_line + step_width,
+                                     y_line,
+                                     x_lo_line - last_x_line,
+                                     y_zero_line - y_line);
+                  }
+
+                  cairo_fill(cr);
                }
 
-               if (y < 0) {
-                  gdk_cairo_set_source_rgba(cr, &BLUE_HALF);
-                  cairo_rectangle(cr,
-                                  last_x_line + step_width,
-                                  y_zero_line,
-                                  x_lo_line - last_x_line,
-                                  y_line - y_zero_line);
-               } else {
-                  gdk_cairo_set_source_rgba(cr, &RED_HALF);
-                  cairo_rectangle(cr,
-                                  last_x_line + step_width,
-                                  y_line,
-                                  x_lo_line - last_x_line,
-                                  y_zero_line - y_line);
-               }
-
-               cairo_fill(cr);
                last_x_line = x_lo_line;
             }
          }
@@ -129,17 +134,23 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
       for (guint i = 0; i < width; i++) {
          double x = i * xrange / width + xmin;
          double y = fn(x);
-         int j = (int)(height * (1 - (y - ymin) / yrange));
-         if (j < 0 || j > (int)height) {
-            if (offscreen) {
-               cairo_move_to(cr, i, j);
+
+         if (!std::isnan(y)) {
+            int j = (int)(height * (1 - (y - ymin) / yrange));
+            if (j < 0 || j > (int)height) {
+               if (offscreen) {
+                  cairo_move_to(cr, i, j);
+               } else {
+                  cairo_line_to(cr, i, j);
+                  offscreen = true;
+               }
             } else {
                cairo_line_to(cr, i, j);
-               offscreen = true;
+               offscreen = false;
             }
          } else {
-            cairo_line_to(cr, i, j);
-            offscreen = false;
+            cairo_stroke(cr);
+            offscreen = true;
          }
       }
 
@@ -151,9 +162,11 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
 
          int i = (int)(width * (tr_xval - xmin) / xrange);
          double y = fn(tr_xval);
-         int j = (int)(height * (1 - (y - ymin) / yrange));
-         cairo_arc(cr, i, j, 5, 0, 2 * G_PI);
-         cairo_stroke(cr);
+         if (!std::isnan(y) && !std::isinf(y)) {
+            int j = (int)(height * (1 - (y - ymin) / yrange));
+            cairo_arc(cr, i, j, 5, 0, 2 * G_PI);
+            cairo_stroke(cr);
+         }
 
          std::string res = std::to_string(y);
          gtk_label_set_text(GTK_LABEL(tr_res_area), res.c_str());
@@ -213,11 +226,11 @@ bool Grapher::load_rs_vars() {
             "Error: could not parse integration step size.");
    
    if (success) {
-      if (rs_upper <= rs_lower) {
+      if (rs_upper < rs_lower) {
          gtk_label_set_text(GTK_LABEL(err_area),
                             "Error: flipped integration bounds.");
          success = false;
-      } else if (rs_step < 1e-5) {
+      } else if (rs_step < 1e-7) {
          gtk_label_set_text(GTK_LABEL(err_area),
                             "Error: step size too small.");
          success = false;
@@ -329,12 +342,12 @@ void Grapher::make_grapher() {
    GtkWidget *expr_label = gtk_label_new("Enter an expression in terms of x:");
    gtk_widget_set_halign(expr_label, GTK_ALIGN_START);
    gtk_grid_attach(GTK_GRID(grid), expr_label, 0, 0, 7, 1);
-   
+
    expr_entry = gtk_entry_new();
    gtk_grid_attach(GTK_GRID(grid), expr_entry, 0, 1, 4, 1);
    g_signal_connect(G_OBJECT(expr_entry), "activate",
                     G_CALLBACK(load_expr), this);
-   
+
    GtkWidget *go_button = gtk_button_new_with_label("Go");
    gtk_grid_attach(GTK_GRID(grid), go_button, 4, 1, 1, 1);
    g_signal_connect(G_OBJECT(go_button), "clicked",
@@ -346,7 +359,7 @@ void Grapher::make_grapher() {
    gtk_widget_set_hexpand(graphing_area, TRUE);
    gtk_widget_set_valign(graphing_area, GTK_ALIGN_CENTER);
    gtk_widget_set_halign(graphing_area, GTK_ALIGN_CENTER);
-   
+
    gtk_grid_attach(GTK_GRID(grid), graphing_area, 0, 2, 5, 5);
    g_signal_connect(G_OBJECT(graphing_area), "draw",
                     G_CALLBACK(draw), this);
