@@ -20,7 +20,7 @@ CFLAGS=-g -Wall -Wno-deprecated-declarations -Wno-unused-function `pkg-config --
 LEX=flex
 YACC=bison
 
-SRCS=compile.cpp expr.c lexer.c main.cpp parser.c repl.cpp grapher.cpp test.cpp
+SRCS=compile.cpp expr.c lexer.c main.cpp parser.c repl.cpp grapher.cpp drawing.cpp test.cpp
 
 full: rcalc
 	echo '#!/usr/bin/env bash\nLD_LIBRARY_PATH=$$LD_LIBRARY_PATH:./asmjit/ ./rcalc.bin $$@' > rcalc && chmod +x rcalc

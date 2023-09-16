@@ -17,6 +17,7 @@
  */
 
 #include "grapher.hpp"
+#include "drawing.hpp"
 
 #include <cmath>
 
@@ -168,26 +169,111 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
       gdk_cairo_set_source_rgba(cr, &GREEN);
       bool offscreen = false;
       for (guint i = 0; i < width; i++) {
-         double x = i * xrange / width + xmin;
-         double y = fn(x);
+         double x_0 = i * xrange / width + xmin;
+         
+         // x_1 := x_0 + 1px delta
+         double x_1 = x_0 + xrange / width;
+         
+         Point A = Point::of(fn, x_0),
+               B = Point::of(fn, x_1);
 
-         if (!std::isnan(y)) {
-            int j = (int)(height * (1 - (y - ymin) / yrange));
-            if (j < 0 || j > (int)height) {
-               if (offscreen) {
-                  cairo_move_to(cr, i, j);
+         if (!offscreen && (std::isnan(A.y) || std::isnan(B.y))) {
+            cairo_stroke(cr);
+            offscreen = true;
+            continue;
+         }
+
+         Point pos_inf = goes_pos_inf(fn, A, B);
+         Point neg_inf = { 0, 0 };
+         if (pos_inf.y != 0) {
+            // Check if it goes to infinity from the left or the right.
+            // Assumes a continuous ascent from whichever side
+            double lhs_mid = fn((A.x + pos_inf.x) / 2.0);
+            if (lhs_mid > A.y) {
+               // We assume it comes from the left
+               cairo_line_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
+
+               // What's on the other side?
+               neg_inf = goes_neg_inf(fn, pos_inf, B);
+               if (neg_inf.y != 0) {
+                  cairo_stroke(cr);
+                  cairo_move_to(cr, width * (neg_inf.x - xmin) / xrange, height);
                } else {
-                  cairo_line_to(cr, i, j);
+                  pos_inf = goes_pos_inf(fn, pos_inf, B);
+                  if (pos_inf.y == 0) {
+                     // It doesn't go to infinity and come back.
+                     // There's some other kind of jump. 
+                     cairo_stroke(cr);
+                  }
+               }
+            } else {
+               // We assume it comes from the right.
+               // But then what happens on the left side?
+               neg_inf = goes_neg_inf(fn, A, pos_inf);
+               if (neg_inf.y != 0) {
+                  cairo_line_to(cr, width * (neg_inf.x - xmin) / xrange, height);
+                  cairo_stroke(cr);
+               } else {
+                  Point lhs_pos_inf = goes_pos_inf(fn, A, pos_inf);
+                  if (lhs_pos_inf.y == 0) {
+                     cairo_stroke(cr);
+                  }
+               }
+
+               cairo_move_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
+            }
+         } else {
+            // The mirror image of the above.
+            neg_inf = goes_neg_inf(fn, A, B);
+            if (neg_inf.y != 0) {
+               double lhs_mid = fn((A.x + neg_inf.x) / 2.0);
+               if (lhs_mid < A.y) {
+                  cairo_line_to(cr, width * (neg_inf.x - xmin) / xrange, height);
+
+                  pos_inf = goes_pos_inf(fn, neg_inf, B);
+                  if (pos_inf.y != 0) {
+                     cairo_stroke(cr);
+                     cairo_move_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
+                  } else {
+                     neg_inf = goes_neg_inf(fn, neg_inf, B);
+                     if (neg_inf.y == 0) {
+                        cairo_stroke(cr);
+                     }
+                  }
+               } else {
+                  pos_inf = goes_pos_inf(fn, neg_inf, A);
+                  if (pos_inf.y != 0) {
+                     cairo_line_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
+                     cairo_stroke(cr);
+                  } else {
+                     Point lhs_neg_inf = goes_neg_inf(fn, neg_inf, A);
+                     if (lhs_neg_inf.y == 0) {
+                        cairo_stroke(cr);
+                     }
+                  }
+
+                  cairo_move_to(cr, width * (neg_inf.x - xmin) / xrange, 0);
+               }
+            }
+         }
+
+         if (pos_inf.y == 0 && neg_inf.y == 0) {
+            // No discontinuity. We draw the line through the midpoint.
+            Point next = midpoint(A, B).scale(xmin, xmax, width,
+                                              ymin, ymax, height);
+            
+            if (next.y < 0 || next.y > height) {
+               if (offscreen) {
+                  cairo_move_to(cr, next.x, next.y);
+               } else {
+                  cairo_line_to(cr, next.x, next.y);
+                  cairo_stroke(cr);
                   offscreen = true;
                }
             } else {
-               cairo_line_to(cr, i, j);
                offscreen = false;
+               cairo_line_to(cr, next.x, next.y);
             }
-         } else if (!offscreen) {
-            // Discontinuity
-            cairo_stroke(cr);
-            offscreen = true;
          }
       }
 
@@ -409,7 +495,7 @@ void Grapher::make_grapher() {
                     G_CALLBACK(load_expr), this);
 
    graphing_area = gtk_drawing_area_new();
-   gtk_widget_set_size_request(graphing_area, 500, 400);
+   gtk_widget_set_size_request(graphing_area, 600, 400);
    gtk_widget_set_vexpand(graphing_area, TRUE);
    gtk_widget_set_hexpand(graphing_area, TRUE);
    gtk_widget_set_valign(graphing_area, GTK_ALIGN_CENTER);
