@@ -177,9 +177,28 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
          Point A = Point::of(fn, x_0),
                B = Point::of(fn, x_1);
 
-         if (!offscreen && (std::isnan(A.y) || std::isnan(B.y))) {
+         if (std::isnan(A.y) || std::isnan(B.y)) {
             cairo_stroke(cr);
-            offscreen = true;
+            continue;
+         }
+
+         Point mid = midpoint(A, B);
+         if (std::isinf(mid.y)) {
+            if (!offscreen) {
+               if (mid.y > 0) {
+                  cairo_line_to(cr, width * (x_1 - xmin) / xrange, 0);
+               } else {
+                  cairo_line_to(cr, width * (x_1 - xmin) / xrange, height);
+               }
+
+               cairo_stroke(cr);
+               offscreen = true;
+            } else if (mid.y > 0) {
+               cairo_move_to(cr, width * (x_1 - xmin) / xrange, 0);
+            } else {
+               cairo_move_to(cr, width * (x_1 - xmin) / xrange, height);
+            }
+
             continue;
          }
 
@@ -196,6 +215,8 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
                // What's on the other side?
                neg_inf = goes_neg_inf(fn, pos_inf, B);
                if (neg_inf.y != 0) {
+                  printf("x = %f, y = %f\n", neg_inf.x, neg_inf.y);
+                  printf("xTrue = %f\n", width * (neg_inf.x - xmin) / xrange);
                   cairo_stroke(cr);
                   cairo_move_to(cr, width * (neg_inf.x - xmin) / xrange, height);
                } else {
@@ -263,16 +284,15 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
                                               ymin, ymax, height);
             
             if (next.y < 0 || next.y > height) {
-               if (offscreen) {
-                  cairo_move_to(cr, next.x, next.y);
-               } else {
+               if (!offscreen) {
                   cairo_line_to(cr, next.x, next.y);
-                  cairo_stroke(cr);
                   offscreen = true;
+               } else {
+                  cairo_move_to(cr, next.x, next.y);
                }
             } else {
-               offscreen = false;
                cairo_line_to(cr, next.x, next.y);
+               offscreen = false;
             }
          }
       }

@@ -24,7 +24,7 @@ Point goes_pos_inf(Func fn, Point A, Point B) {
    Point lo = A.y < B.y? A: B,
          hi = A.y < B.y? B: A;
    
-   if (mid.y >= 1e+10) {
+   if (mid.y >= 1e+11) {
       return mid;
    } else if (mid.y > hi.y) {
       // If the asymptote goes to +inf, Then the lower y must be on the other side
@@ -48,10 +48,10 @@ Point goes_neg_inf(Func fn, Point A, Point B) {
    Point lo = A.y < B.y? A: B,
          hi = A.y < B.y? B: A;
    
-   if (mid.y <= -1e+10) {
+   if (mid.y <= -1e+15) {
       return mid;
    } else if (mid.y < lo.y) {
-      // If the asymptote goes to -inf, Then the higher y must be on the other side
+      // If the asymptote goes to -inf, Then the lower y must be on the other side
       // So we search between mid and hi.
       return goes_neg_inf(fn, mid, hi);
    } else if (mid.y > hi.y) {
