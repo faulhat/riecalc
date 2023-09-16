@@ -19,19 +19,19 @@
 #include "drawing.hpp"
 #include <cmath>
 
-Point goes_pos_inf(Func fn, Point A, Point B) {
+Point goes_pos_inf(Func fn, Point A, Point B, double xrange) {
    Point mid = Point::of(fn, (A.x + B.x) / 2.0);
    Point lo = A.y < B.y? A: B,
          hi = A.y < B.y? B: A;
    
-   if (mid.y >= 1e+11) {
+   if (mid.y >= 1e+11 / xrange) {
       return mid;
    } else if (mid.y > hi.y) {
       // If the asymptote goes to +inf, Then the lower y must be on the other side
       // So we search between mid and lo.
-      return goes_pos_inf(fn, mid, lo);
+      return goes_pos_inf(fn, mid, lo, xrange);
    } else if (mid.y < lo.y) {
-      return goes_pos_inf(fn, mid, hi);
+      return goes_pos_inf(fn, mid, hi, xrange);
    } else {
       // mid.y is either less than lo.y or between lo.y and hi.y
       // Either way we fail to conclude the function goes to positive infinity.
@@ -43,19 +43,19 @@ Point goes_pos_inf(Func fn, Point A, Point B) {
    }
 }
 
-Point goes_neg_inf(Func fn, Point A, Point B) {
+Point goes_neg_inf(Func fn, Point A, Point B, double xrange) {
    Point mid = Point::of(fn, (A.x + B.x) / 2.0);
    Point lo = A.y < B.y? A: B,
          hi = A.y < B.y? B: A;
    
-   if (mid.y <= -1e+15) {
+   if (mid.y <= -1e+11 / xrange) {
       return mid;
    } else if (mid.y < lo.y) {
       // If the asymptote goes to -inf, Then the lower y must be on the other side
       // So we search between mid and hi.
-      return goes_neg_inf(fn, mid, hi);
+      return goes_neg_inf(fn, mid, hi, xrange);
    } else if (mid.y > hi.y) {
-      return goes_neg_inf(fn, mid, lo);
+      return goes_neg_inf(fn, mid, lo, xrange);
    } else {
       // Same logic as positive equivalent.
       return { 0, 0 };

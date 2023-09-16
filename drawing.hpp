@@ -69,10 +69,11 @@ inline Point midpoint(Point A, Point B) {
  * @param fn The function
  * @param A The lower bound point
  * @param B The upper bound point
+ * @param xrange The display x-range, used to determine precision.
  *
  * @return The point where fn(x) is infinity, or (0, 0)
  */
-Point goes_pos_inf(Func fn, Point A, Point B);
+Point goes_pos_inf(Func fn, Point A, Point B, double xrange);
 
 /**
  * Determines if the function goes to negative infinity in the interval
@@ -80,10 +81,11 @@ Point goes_pos_inf(Func fn, Point A, Point B);
  * @param fn The function
  * @param A The lower bound point
  * @param B The upper bound point
+ * @param xrange The display x-range, used to determine precision.
  *
  * @return The point where fn(x) is -inf, or (0, 0) 
  */
-Point goes_neg_inf(Func fn, Point A, Point B);
+Point goes_neg_inf(Func fn, Point A, Point B, double xrange);
 
 #endif
 

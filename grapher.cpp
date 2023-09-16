@@ -202,7 +202,7 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
             continue;
          }
 
-         Point pos_inf = goes_pos_inf(fn, A, B);
+         Point pos_inf = goes_pos_inf(fn, A, B, xrange);
          Point neg_inf = { 0, 0 };
          if (pos_inf.y != 0) {
             // Check if it goes to infinity from the left or the right.
@@ -213,14 +213,12 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
                cairo_line_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
 
                // What's on the other side?
-               neg_inf = goes_neg_inf(fn, pos_inf, B);
+               neg_inf = goes_neg_inf(fn, pos_inf, B, xrange);
                if (neg_inf.y != 0) {
-                  printf("x = %f, y = %f\n", neg_inf.x, neg_inf.y);
-                  printf("xTrue = %f\n", width * (neg_inf.x - xmin) / xrange);
                   cairo_stroke(cr);
                   cairo_move_to(cr, width * (neg_inf.x - xmin) / xrange, height);
                } else {
-                  pos_inf = goes_pos_inf(fn, pos_inf, B);
+                  pos_inf = goes_pos_inf(fn, pos_inf, B, xrange);
                   if (pos_inf.y == 0) {
                      // It doesn't go to infinity and come back.
                      // There's some other kind of jump. 
@@ -230,12 +228,12 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
             } else {
                // We assume it comes from the right.
                // But then what happens on the left side?
-               neg_inf = goes_neg_inf(fn, A, pos_inf);
+               neg_inf = goes_neg_inf(fn, A, pos_inf, xrange);
                if (neg_inf.y != 0) {
                   cairo_line_to(cr, width * (neg_inf.x - xmin) / xrange, height);
                   cairo_stroke(cr);
                } else {
-                  Point lhs_pos_inf = goes_pos_inf(fn, A, pos_inf);
+                  Point lhs_pos_inf = goes_pos_inf(fn, A, pos_inf, xrange);
                   if (lhs_pos_inf.y == 0) {
                      cairo_stroke(cr);
                   }
@@ -245,29 +243,29 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
             }
          } else {
             // The mirror image of the above.
-            neg_inf = goes_neg_inf(fn, A, B);
+            neg_inf = goes_neg_inf(fn, A, B, xrange);
             if (neg_inf.y != 0) {
                double lhs_mid = fn((A.x + neg_inf.x) / 2.0);
                if (lhs_mid < A.y) {
                   cairo_line_to(cr, width * (neg_inf.x - xmin) / xrange, height);
 
-                  pos_inf = goes_pos_inf(fn, neg_inf, B);
+                  pos_inf = goes_pos_inf(fn, neg_inf, B, xrange);
                   if (pos_inf.y != 0) {
                      cairo_stroke(cr);
                      cairo_move_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
                   } else {
-                     neg_inf = goes_neg_inf(fn, neg_inf, B);
+                     neg_inf = goes_neg_inf(fn, neg_inf, B, xrange);
                      if (neg_inf.y == 0) {
                         cairo_stroke(cr);
                      }
                   }
                } else {
-                  pos_inf = goes_pos_inf(fn, neg_inf, A);
+                  pos_inf = goes_pos_inf(fn, neg_inf, A, xrange);
                   if (pos_inf.y != 0) {
                      cairo_line_to(cr, width * (pos_inf.x - xmin) / xrange, 0);
                      cairo_stroke(cr);
                   } else {
-                     Point lhs_neg_inf = goes_neg_inf(fn, neg_inf, A);
+                     Point lhs_neg_inf = goes_neg_inf(fn, neg_inf, A, xrange);
                      if (lhs_neg_inf.y == 0) {
                         cairo_stroke(cr);
                      }
