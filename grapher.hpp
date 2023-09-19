@@ -48,14 +48,24 @@ class Grapher {
    /* x value for trace */
    double tr_xval;
 
-   /* Components of the analysis menu */
+   /* Components of the Riemann sum menu */
    GtkWidget *rs_lower_entry,
              *rs_upper_entry,
              *rs_step_entry,
              *rs_res_area;
 
-   /* Riemann summation input data */
+   /* Riemann sum input data */
    double rs_lower, rs_upper, rs_step;
+
+   /* Components of Monte Carlo menu */
+   GtkWidget *mc_xmin_entry,
+             *mc_xmax_entry,
+             *mc_ymin_entry,
+             *mc_ymax_entry,
+             *mc_res_area;
+
+   /* Monte Carlo input data */
+   double mc_xmin, mc_xmax, mc_ymin, mc_ymax;
    
    /* Objects used for the compilation of expressions. */
    const ExecCtx ectx;
@@ -65,8 +75,11 @@ class Grapher {
    /* Flag telling draw function to incorporate trace */
    bool do_tr;
 
-   /* Flag telling draw function to incorporate riemann sum */
+   /* Flag telling draw function to incorporate Riemann sum */
    bool do_rs;
+
+   /* Flag telling draw function to incorporate Monte Carlo */
+   bool do_mc;
 
    /**
     * Loads x value for trace function
@@ -76,7 +89,7 @@ class Grapher {
    bool load_xval();
 
    /**
-    * Loads riemann sum vars
+    * Loads Riemann sum vars
     *
     * @return true if there were no errors
     */

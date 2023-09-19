@@ -596,6 +596,7 @@ void Grapher::make_analysis() {
    GtkWidget *analysis_nb = gtk_notebook_new();
    gtk_grid_attach(GTK_GRID(grid), analysis_nb, 5, 2, 2, 8);
    
+   // Making the trace menu
    GtkWidget *tr_grid = gtk_grid_new();
    gtk_grid_set_row_spacing(GTK_GRID(tr_grid), 15);
    gtk_grid_set_column_spacing(GTK_GRID(tr_grid), 10);
@@ -627,51 +628,97 @@ void Grapher::make_analysis() {
    tr_res_area = gtk_label_new("");
    gtk_grid_attach(GTK_GRID(tr_grid), tr_res_area, 2, 2, 2, 1);
 
+   // Making the Riemann sum menu
    GtkWidget *rs_grid = gtk_grid_new();
    gtk_grid_set_row_spacing(GTK_GRID(rs_grid), 10);
    gtk_widget_set_margin_top(rs_grid, 10);
    gtk_widget_set_margin_left(rs_grid, 10);
-   gtk_widget_set_margin_right(rs_grid, 0);
+   gtk_widget_set_margin_right(rs_grid, 10);
    
    GtkWidget *rs_label = gtk_label_new("RSum");
    gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
                             rs_grid,
                             rs_label);
    
-   GtkWidget *rs_lower_label = gtk_label_new("Lower bound:");
+   GtkWidget *rs_lower_label = gtk_label_new("xmin: ");
    gtk_grid_attach(GTK_GRID(rs_grid), rs_lower_label, 0, 0, 1, 1);
    
    rs_lower_entry = gtk_entry_new();
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_lower_entry, 0, 1, 1, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_lower_entry, 1, 0, 1, 1);
    g_signal_connect(G_OBJECT(rs_lower_entry), "activate",
                     G_CALLBACK(load_expr_rs), this);
 
-   GtkWidget *rs_upper_label = gtk_label_new("Upper bound:");
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_upper_label, 0, 2, 1, 1);
+   GtkWidget *rs_upper_label = gtk_label_new("xmax: ");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_upper_label, 0, 1, 1, 1);
 
    rs_upper_entry = gtk_entry_new();
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_upper_entry, 0, 3, 1, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_upper_entry, 1, 1, 1, 1);
    g_signal_connect(G_OBJECT(rs_upper_entry), "activate",
                     G_CALLBACK(load_expr_rs), this);
 
-   GtkWidget *rs_step_label = gtk_label_new("Step size:");
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_step_label, 0, 4, 1, 1);
+   GtkWidget *rs_step_label = gtk_label_new("step: ");
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_step_label, 0, 2, 1, 1);
 
    rs_step_entry = gtk_entry_new();
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_step_entry, 0, 5, 1, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_step_entry, 1, 2, 1, 1);
    g_signal_connect(G_OBJECT(rs_step_entry), "activate",
                     G_CALLBACK(load_expr_rs), this);
 
    GtkWidget *sum_button = gtk_button_new_with_label("Sum");
-   gtk_grid_attach(GTK_GRID(rs_grid), sum_button, 0, 6, 1, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), sum_button, 0, 3, 2, 1);
    g_signal_connect(G_OBJECT(sum_button), "clicked",
                     G_CALLBACK(load_expr_rs), this);
 
    GtkWidget *rs_res_label = gtk_label_new("Integral estimate:");
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_label, 0, 7, 1, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_label, 0, 4, 2, 1);
 
    rs_res_area = gtk_label_new("");
-   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_area, 0, 8, 1, 1);
+   gtk_grid_attach(GTK_GRID(rs_grid), rs_res_area, 0, 5, 2, 1);
+
+   // Making Monte Carlo menu
+   GtkWidget *mc_grid = gtk_grid_new();
+   gtk_grid_set_row_spacing(GTK_GRID(mc_grid), 10); 
+   gtk_widget_set_margin_top(mc_grid, 10);
+   gtk_widget_set_margin_left(mc_grid, 10);
+   gtk_widget_set_margin_right(mc_grid, 10);
+
+   GtkWidget *mc_label = gtk_label_new("MCarlo");
+   gtk_notebook_append_page(GTK_NOTEBOOK(analysis_nb),
+                            mc_grid,
+                            mc_label);
+
+   GtkWidget *mc_xmin_label = gtk_label_new("xmin: ");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_xmin_label, 0, 0, 1, 1);
+
+   mc_xmin_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_xmin_entry, 1, 0, 1, 1);
+
+   GtkWidget *mc_xmax_label = gtk_label_new("xmax: ");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_xmax_label, 0, 1, 1, 1);
+
+   mc_xmax_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_xmax_entry, 1, 1, 1, 1);
+
+   GtkWidget *mc_ymin_label = gtk_label_new("ymin: ");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_ymin_label, 0, 2, 1, 1);
+
+   mc_ymin_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_ymin_entry, 1, 2, 1, 1);
+
+   GtkWidget *mc_ymax_label = gtk_label_new("ymax: ");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_ymax_label, 0, 3, 1, 1);
+
+   mc_ymax_entry = gtk_entry_new();
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_ymax_entry, 1, 3, 1, 1);
+
+   GtkWidget *approx_btn = gtk_button_new_with_label("Approximate");
+   gtk_grid_attach(GTK_GRID(mc_grid), approx_btn, 0, 4, 2, 1);
+
+   GtkWidget *approx_label = gtk_label_new("Integral estimate:");
+   gtk_grid_attach(GTK_GRID(mc_grid), approx_label, 0, 5, 2, 1);
+
+   mc_res_area = gtk_label_new("");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_res_area, 0, 6, 2, 1);
 }
 
 void Grapher::make_all() {
