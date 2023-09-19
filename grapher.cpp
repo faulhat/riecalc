@@ -168,14 +168,14 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
 
       gdk_cairo_set_source_rgba(cr, &GREEN);
       bool offscreen = false;
+      Point B = Point::of(fn, xmin);
+      Point A;
       for (guint i = 0; i < width; i++) {
-         double x_0 = i * xrange / width + xmin;
+         // x := x(i) + 1px delta
+         double x = ((double)(i + 1) / width) * xrange + xmin;
          
-         // x_1 := x_0 + 1px delta
-         double x_1 = x_0 + xrange / width;
-         
-         Point A = Point::of(fn, x_0),
-               B = Point::of(fn, x_1);
+         A = B;
+         B = Point::of(fn, x);
 
          if (std::isnan(A.y) || std::isnan(B.y)) {
             cairo_stroke(cr);
@@ -186,17 +186,17 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
          if (std::isinf(mid.y)) {
             if (!offscreen) {
                if (mid.y > 0) {
-                  cairo_line_to(cr, width * (x_1 - xmin) / xrange, 0);
+                  cairo_line_to(cr, width * (x - xmin) / xrange, 0);
                } else {
-                  cairo_line_to(cr, width * (x_1 - xmin) / xrange, height);
+                  cairo_line_to(cr, width * (x - xmin) / xrange, height);
                }
 
                cairo_stroke(cr);
                offscreen = true;
             } else if (mid.y > 0) {
-               cairo_move_to(cr, width * (x_1 - xmin) / xrange, 0);
+               cairo_move_to(cr, width * (x - xmin) / xrange, 0);
             } else {
-               cairo_move_to(cr, width * (x_1 - xmin) / xrange, height);
+               cairo_move_to(cr, width * (x - xmin) / xrange, height);
             }
 
             continue;
@@ -387,6 +387,44 @@ bool Grapher::load_rs_vars() {
    return success;
 }
 
+bool Grapher::load_mc_vars() {
+   bool success =
+         get_double_from_gtk_entry(
+            mc_xmin_entry,
+            &mc_xmin,
+            err_area,
+            "Error: could not parse left bound for approx. area.")
+      && get_double_from_gtk_entry(
+            mc_xmax_entry,
+            &mc_xmax,
+            err_area,
+            "Error: could not parse right bound for approx. area.")
+      && get_double_from_gtk_entry(
+            mc_ymin_entry,
+            &mc_ymin,
+            err_area,
+            "Error: could not parse bottom bound for approx. area.")
+      && get_double_from_gtk_entry(
+            mc_ymax_entry,
+            &mc_ymax,
+            err_area,
+            "Error: could not parse top bound for approx. area.");
+
+   if (success) {
+      if (mc_xmax < mc_xmin) {
+         gtk_label_set_text(GTK_LABEL(err_area),
+                           "Error: flipped horizontal area bounds.");
+         success = false;
+      } else if (mc_ymax < mc_ymin) {
+         gtk_label_set_text(GTK_LABEL(err_area),
+                           "Error: flipped vertical area bounds.");
+         success = false;
+      }
+   }
+   
+   return success;
+}
+
 /**
  * "activate" callback for the entire grapher.
  *
@@ -513,7 +551,7 @@ void Grapher::make_grapher() {
                     G_CALLBACK(load_expr), this);
 
    graphing_area = gtk_drawing_area_new();
-   gtk_widget_set_size_request(graphing_area, 600, 400);
+   gtk_widget_set_size_request(graphing_area, 650, 400);
    gtk_widget_set_vexpand(graphing_area, TRUE);
    gtk_widget_set_hexpand(graphing_area, TRUE);
    gtk_widget_set_valign(graphing_area, GTK_ALIGN_CENTER);
@@ -525,16 +563,16 @@ void Grapher::make_grapher() {
 }
 
 void Grapher::make_settings() {
-   GtkWidget *xmin_label = gtk_label_new("xMin");
+   GtkWidget *xmin_label = gtk_label_new("xmin");
    gtk_grid_attach(GTK_GRID(grid), xmin_label, 1, 7, 1, 1);
 
-   GtkWidget *xmax_label = gtk_label_new("xMax");
+   GtkWidget *xmax_label = gtk_label_new("xmax");
    gtk_grid_attach(GTK_GRID(grid), xmax_label, 2, 7, 1, 1);
 
-   GtkWidget *ymin_label = gtk_label_new("yMin");
+   GtkWidget *ymin_label = gtk_label_new("ymin");
    gtk_grid_attach(GTK_GRID(grid), ymin_label, 3, 7, 1, 1);
 
-   GtkWidget *ymax_label = gtk_label_new("yMax");
+   GtkWidget *ymax_label = gtk_label_new("ymax");
    gtk_grid_attach(GTK_GRID(grid), ymax_label, 4, 7, 1, 1);
 
    GtkWidget *dim_label = gtk_label_new("Window:");

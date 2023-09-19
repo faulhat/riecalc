@@ -96,6 +96,13 @@ class Grapher {
    bool load_rs_vars();
 
    /**
+    * Loads Monte Carlo approximation vars
+    *
+    * @return true if there were no errors
+    */
+   bool load_mc_vars();
+
+   /**
     * Sets the function being graphed
     *
     * @param expr The new expression
