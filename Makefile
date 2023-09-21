@@ -20,20 +20,20 @@ CFLAGS=-g -Wall -Wno-deprecated-declarations -Wno-unused-function `pkg-config --
 LEX=flex
 YACC=bison
 
-SRCS=compile.cpp expr.c lexer.c main.cpp parser.c repl.cpp grapher.cpp asymptotes.cpp test.cpp
+SRCS=compile.cpp expr.c main.cpp repl.cpp grapher.cpp asymptotes.cpp test.cpp
 
-full: rcalc
-	echo '#!/usr/bin/env bash\nLD_LIBRARY_PATH=$$LD_LIBRARY_PATH:./asmjit/ ./rcalc.bin $$@' > rcalc && chmod +x rcalc
-
-rcalc: libasmjit lexer parser $(SRCS) compile.hpp expr.h
-	$(CC) $(CFLAGS) -orcalc.bin $(SRCS) -L./asmjit/ -lasmjit `pkg-config --libs gtk+-3.0` -lm -lstdc++
+rcalc: mkdirs libasmjit lexer parser src/ 
+	cd src && $(CC) $(CFLAGS) -o../bin/rcalc $(SRCS) ../out/parser.c ../out/lexer.c -L../asmjit/ -lasmjit `pkg-config --libs gtk+-3.0` -lm -lstdc++
 
 libasmjit: asmjit/CMakeLists.txt
 	cd asmjit/ && cmake . && make
 
-lexer: lexer.l
-	$(LEX) --header-file=lexer.h -olexer.c lexer.l
+lexer: src/lexer.l
+	$(LEX) --header-file=out/lexer.h -oout/lexer.c src/lexer.l
 
-parser: parser.y
-	$(YACC) -d -oparser.c parser.y
+parser: src/parser.y
+	$(YACC) --header=out/parser.h -oout/parser.c src/parser.y
+
+mkdirs:
+	mkdir -p out && mkdir -p bin
 

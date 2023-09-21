@@ -17,7 +17,7 @@
  */
 
 %{
-   #include "expr.h"
+   #include "../src/expr.h"
    #include "lexer.h"
 
    void yyerror(Expr **, char **, char **, char **err, const char *s);

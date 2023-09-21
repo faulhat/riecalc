@@ -17,7 +17,7 @@
  */
 
 %{
-   #include "expr.h"
+   #include "../src/expr.h"
    #include "parser.h"
    #include <math.h>
 %}

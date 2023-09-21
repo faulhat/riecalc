@@ -21,11 +21,11 @@
 
 extern "C" {
    #include "expr.h"
-   #include "parser.h"
-   #include "lexer.h"
+   #include "../out/parser.h"
+   #include "../out/lexer.h"
 }
 
-#include "asmjit/src/asmjit/x86.h"
+#include "../asmjit/src/asmjit/x86.h"
 #include <unordered_map>
 #include <string>
 #include <exception>
