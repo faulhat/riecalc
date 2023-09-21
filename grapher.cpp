@@ -31,7 +31,7 @@ bool Grapher::mc_is_paused() {
 gboolean mc_sample(gpointer data) {
    Grapher *grapher = (Grapher *)data;
    if (!grapher->mc_is_paused()) {
-      grapher->mc_add_samples(10000);
+      grapher->mc_add_samples(20000);
    }
 
    return G_SOURCE_CONTINUE;
@@ -617,7 +617,7 @@ void Grapher::mc_add_samples(int n) {
 
 void Grapher::mc_button_go() {
    mc_paused = true;
-   gtk_button_set_label(GTK_BUTTON(mc_button), "Go");
+   gtk_button_set_label(GTK_BUTTON(mc_button), "Continue");
 }
 
 void Grapher::mc_button_stop() {
@@ -697,7 +697,7 @@ void Grapher::reload_expr(GraphMode mode) {
          break;
       }
 
-      if (mode != MCARLO && mc_calling_back) {
+      if (mc_calling_back) {
          g_source_remove(mc_sample_tag);
          mc_calling_back = false;
 

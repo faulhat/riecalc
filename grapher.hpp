@@ -91,6 +91,7 @@ class Grapher {
    /* Is the MC sampling paused? */
    bool mc_paused;
 
+   /* The id of the active handler function for the Monte Carlo button */
    gulong mc_button_handler_id;
 
    /* Objects used for the compilation of expressions. */
