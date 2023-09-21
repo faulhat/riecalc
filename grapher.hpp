@@ -66,10 +66,32 @@ class Grapher {
              *mc_xmax_entry,
              *mc_ymin_entry,
              *mc_ymax_entry,
-             *mc_res_area;
+             *mc_button,
+             *mc_res_area,
+             *mc_n_area;
 
    /* Monte Carlo input data */
    double mc_xmin, mc_xmax, mc_ymin, mc_ymax;
+
+   /* The bitmap representing the Monte Carlo sampling */
+   GdkPixbuf *mc_pixbuf;
+
+   /* Has the Monte Carlo pixel buffer been initialized? */
+   bool mc_initialized;
+
+   /* Has the Monte Carlo sampling callback been created? */
+   bool mc_calling_back;
+
+   /* Monte Carlo sampling data */
+   double mc_points, mc_sum, mc_area;
+
+   /* Timeout tag for the Monte Carlo sampling callback */
+   gint mc_sample_tag;
+
+   /* Is the MC sampling paused? */
+   bool mc_paused;
+
+   gulong mc_button_handler_id;
 
    /* Objects used for the compilation of expressions. */
    const ExecCtx ectx;
@@ -160,6 +182,30 @@ public:
     * @return FALSE
     */
    gboolean draw_graph(cairo_t *cr);
+
+   /**
+    * Adds a new sample to the Monte Carlo view
+    */
+   void mc_add_sample();
+
+   /**
+    * Adds n new samples to the Monte Carlo view
+    *  and requests a redraw
+    */
+   void mc_add_samples(int n);
+
+   /* Is the Monte Carlo button "Stop" or "Go?" */
+   bool mc_is_paused();
+
+   /**
+    * Switches the Monte Carlo "Stop" button to "Go"
+    */
+   void mc_button_go();
+
+   /**
+    * Switches the Monte Carlo "Go" button to "Stop"
+    */
+   void mc_button_stop();
 };
 
 #endif

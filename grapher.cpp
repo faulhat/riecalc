@@ -21,6 +21,22 @@
 
 #include <cmath>
 
+bool Grapher::mc_is_paused() {
+   return mc_paused;
+}
+
+/**
+ * Callback to add a sample to Monte Carlo graph
+ */
+gboolean mc_sample(gpointer data) {
+   Grapher *grapher = (Grapher *)data;
+   if (!grapher->mc_is_paused()) {
+      grapher->mc_add_samples(10000);
+   }
+
+   return G_SOURCE_CONTINUE;
+}
+
 /**
  * "draw" callback for the graphing area.
  * Just calls the Grapher class's internal method,
@@ -34,6 +50,19 @@
  */
 gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
    return ((Grapher *)data)->draw_graph(cr);
+}
+
+/**
+ * Switches the Monte Carlo sampling button from Stop to Go
+ * or vice versa
+ */
+void mc_switch(GtkWidget *widget, gpointer data) {
+   Grapher *grapher = (Grapher *)data;
+   if (grapher->mc_is_paused()) {
+      grapher->mc_button_stop();
+   } else {
+      grapher->mc_button_go();
+   }
 }
 
 gboolean Grapher::draw_graph(cairo_t *cr) {
@@ -164,6 +193,60 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
             
          std::string res = std::to_string(sum);
          gtk_label_set_text(GTK_LABEL(rs_res_area), res.c_str());
+      } else if (mode == MCARLO) {
+         if (!mc_initialized) {
+            int graph_width = gtk_widget_get_allocated_width(graphing_area),
+                graph_height = gtk_widget_get_allocated_height(graphing_area);
+            mc_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
+                                       true,
+                                       8,
+                                       graph_width,
+                                       graph_height);
+
+            mc_initialized = true;
+         }
+         
+         if (!mc_calling_back) {
+            mc_points = 0;
+            mc_sum = 0;
+
+            // the Monte Carlo drawing layer must be cleared
+            int channels = gdk_pixbuf_get_n_channels(mc_pixbuf),
+                width = gdk_pixbuf_get_width(mc_pixbuf),
+                height = gdk_pixbuf_get_height(mc_pixbuf),
+                rowstride = gdk_pixbuf_get_rowstride(mc_pixbuf);
+
+            guchar *pixels = gdk_pixbuf_get_pixels(mc_pixbuf);
+            for (int i = 0; i < width; i++) {
+               for (int j = 0; j < height; j++) {
+                  uint32_t *p = (uint32_t *)(pixels + j * rowstride + i * channels);
+                  
+                  *p = 0;
+               }
+            }
+
+            mc_sample_tag = g_timeout_add(100,
+                                          G_SOURCE_FUNC(mc_sample),
+                                          this);
+            mc_calling_back = true;
+            mc_paused = false;
+            gtk_button_set_label(GTK_BUTTON(mc_button), "Stop");
+            g_signal_handler_disconnect(G_OBJECT(mc_button),
+                                        mc_button_handler_id);
+            mc_button_handler_id =
+               g_signal_connect(G_OBJECT(mc_button), "clicked",
+                                G_CALLBACK(mc_switch), this);
+         }
+
+         gdk_cairo_set_source_pixbuf(cr, mc_pixbuf, 0, 0);
+         cairo_rectangle(cr, 0, 0, width, height);
+         cairo_fill(cr);
+
+         std::string res = std::to_string(mc_area);
+         gtk_label_set_text(GTK_LABEL(mc_res_area), res.c_str());
+
+         res = std::to_string((int) mc_points);
+         gtk_label_set_text(GTK_LABEL(mc_n_area), res.c_str());
       }
 
       gdk_cairo_set_source_rgba(cr, &GREEN);
@@ -477,6 +560,102 @@ void load_expr(GtkWidget *widget, gpointer data) {
    ((Grapher *)data)->reload_expr(PLAIN);
 }
 
+void Grapher::mc_add_sample() {
+   static const uint32_t PXRED = 0x800000ff,
+                         PXBLUE = 0x80ff0000,
+                         PXWHITE = 0x40ffffff;
+
+   int channels = gdk_pixbuf_get_n_channels(mc_pixbuf),
+       rowstride = gdk_pixbuf_get_rowstride(mc_pixbuf),
+       width = gdk_pixbuf_get_width(mc_pixbuf),
+       height = gdk_pixbuf_get_height(mc_pixbuf);
+   
+   double xrange = mc_xmax - mc_xmin;
+   double yrange = mc_ymax - mc_ymin;
+   double x = (double)(rand()) / (double)(RAND_MAX) * xrange + mc_xmin,
+          y = (double)(rand()) / (double)(RAND_MAX) * yrange + mc_ymin;
+   
+   int i = (int)(width * (x - xmin) / (xmax - xmin)),
+       j = (int)(height * (1 - ((y - ymin) / (ymax - ymin))));
+
+   double y_actual = fn(x);
+   uint32_t color = 0;
+
+   mc_points += 1.0;
+   if (y_actual > 0) {
+      if (0 < y && y < y_actual) {
+         color = PXRED;
+         mc_sum += 1.0;
+      } else {
+         color = PXWHITE;
+      }
+   } else {
+      if (0 > y && y > y_actual) {
+         color = PXBLUE;
+         mc_sum -= 1.0;
+      } else {
+         color = PXWHITE;
+      }
+   }
+
+   mc_area = (xrange * yrange) * (mc_sum / mc_points);
+
+   if (0 <= i && i < width && 0 <= j && j < height) {
+      guchar *pixels = gdk_pixbuf_get_pixels(mc_pixbuf);
+      uint32_t *p = (uint32_t *)(pixels + j * rowstride + i * channels);
+      *p = color;
+   }
+}
+
+void Grapher::mc_add_samples(int n) {
+   for (int i = 0; i < n; i++) {
+      mc_add_sample();
+   }
+
+   gtk_widget_queue_draw(graphing_area);
+}
+
+void Grapher::mc_button_go() {
+   mc_paused = true;
+   gtk_button_set_label(GTK_BUTTON(mc_button), "Go");
+}
+
+void Grapher::mc_button_stop() {
+   mc_paused = false;
+   gtk_button_set_label(GTK_BUTTON(mc_button), "Stop");
+}
+
+/**
+ * Callback to reload expression and redraw graph with trace.
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
+void load_expr_tr(GtkWidget *widget, gpointer data) {
+   ((Grapher *)data)->reload_expr(TRACE);
+}
+
+/**
+ * Callback to reload expression and redraw graph with Riemann sum view
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
+void load_expr_rs(GtkWidget *widget, gpointer data) {
+   ((Grapher *)data)->reload_expr(RSUM);
+}
+
+
+/**
+ * Callback to reload expression and redraw graph with Monte Carlo view 
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
+void load_expr_mc(GtkWidget *widget, gpointer data) {
+   ((Grapher *)data)->reload_expr(MCARLO);
+}
+
 void Grapher::reload_expr(GraphMode mode) {
    this->mode = mode;
 
@@ -516,6 +695,18 @@ void Grapher::reload_expr(GraphMode mode) {
          break;
       case PLAIN:
          break;
+      }
+
+      if (mode != MCARLO && mc_calling_back) {
+         g_source_remove(mc_sample_tag);
+         mc_calling_back = false;
+
+         gtk_button_set_label(GTK_BUTTON(mc_button), "Go");
+         g_signal_handler_disconnect(G_OBJECT(mc_button),
+                                     mc_button_handler_id);
+         mc_button_handler_id =
+            g_signal_connect(G_OBJECT(mc_button), "clicked",
+                             G_CALLBACK(load_expr_mc), this);
       }
 
       try {
@@ -606,37 +797,6 @@ void Grapher::make_settings() {
 
    err_area = gtk_label_new("");
    gtk_grid_attach(GTK_GRID(grid), err_area, 0, 9, 5, 1);
-}
-
-/**
- * Callback to reload expression and redraw graph with trace.
- *
- * @param widget The caller
- * @param data The Grapher object
- */
-void load_expr_tr(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(TRACE);
-}
-
-/**
- * Callback to reload expression and redraw graph with Riemann sum view
- *
- * @param widget The caller
- * @param data The Grapher object
- */
-void load_expr_rs(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(RSUM);
-}
-
-
-/**
- * Callback to reload expression and redraw graph with Monte Carlo view 
- *
- * @param widget The caller
- * @param data The Grapher object
- */
-void load_expr_mc(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(MCARLO);
 }
 
 void Grapher::make_analysis() {
@@ -766,19 +926,29 @@ void Grapher::make_analysis() {
    g_signal_connect(G_OBJECT(mc_ymax_entry), "activate",
                     G_CALLBACK(load_expr_mc), this);
 
-   GtkWidget *approx_btn = gtk_button_new_with_label("Approximate");
-   gtk_grid_attach(GTK_GRID(mc_grid), approx_btn, 0, 4, 2, 1);
-   g_signal_connect(G_OBJECT(approx_btn), "clicked",
-                    G_CALLBACK(load_expr_mc), this);
+   mc_button = gtk_button_new_with_label("Go");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_button, 0, 4, 2, 1);
+   mc_button_handler_id = 
+      g_signal_connect(G_OBJECT(mc_button), "clicked",
+                       G_CALLBACK(load_expr_mc), this);
 
    GtkWidget *approx_label = gtk_label_new("Integral estimate:");
    gtk_grid_attach(GTK_GRID(mc_grid), approx_label, 0, 5, 2, 1);
 
    mc_res_area = gtk_label_new("");
    gtk_grid_attach(GTK_GRID(mc_grid), mc_res_area, 0, 6, 2, 1);
+
+   GtkWidget *n_label = gtk_label_new("n = ");
+   gtk_grid_attach(GTK_GRID(mc_grid), n_label, 0, 7, 1, 1);
+
+   mc_n_area = gtk_label_new("");
+   gtk_grid_attach(GTK_GRID(mc_grid), mc_n_area, 1, 7, 1, 1);
 }
 
 void Grapher::make_all() {
+   mc_initialized = false;
+   mc_calling_back = false;
+
    GtkWidget *window = gtk_application_window_new(app);
    gtk_window_set_title(GTK_WINDOW(window), "Grapher");
    gtk_container_set_border_width(GTK_CONTAINER(window), 10);
