@@ -17,7 +17,7 @@
  */
 
 #include "grapher.hpp"
-#include "drawing.hpp"
+#include "asymptotes.hpp"
 
 #include <cmath>
 
@@ -114,7 +114,7 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
 
 
    if (fn != nullptr) {
-      if (do_rs) {
+      if (mode == RSUM) {
          double sum = 0;
          int last_x_line = (int) std::floor(width * (rs_lower - rs_step - xmin) / xrange);
          int step_width = (int) std::ceil(width * rs_step / xrange);
@@ -297,13 +297,13 @@ gboolean Grapher::draw_graph(cairo_t *cr) {
 
       cairo_stroke(cr);
 
-      if (do_tr) {
-         gdk_cairo_set_source_rgba(cr, &RED);
-         cairo_set_line_width(cr, 2);
-
+      if (mode == TRACE) {
          int i = (int)(width * (tr_xval - xmin) / xrange);
          double y = fn(tr_xval);
          if (!std::isnan(y) && !std::isinf(y)) {
+            gdk_cairo_set_source_rgba(cr, &RED);
+            cairo_set_line_width(cr, 2);
+
             int j = (int)(height * (1 - (y - ymin) / yrange));
             cairo_arc(cr, i, j, 5, 0, 2 * G_PI);
             cairo_stroke(cr);
@@ -474,20 +474,11 @@ void Grapher::apply_fn_str(const char *in) {
  * @param data The Grapher object
  */
 void load_expr(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(false, false);
+   ((Grapher *)data)->reload_expr(PLAIN);
 }
 
-void Grapher::reload_expr(bool trace, bool rsum) {
-   do_tr = trace;
-   do_rs = rsum;
-
-   if (!do_tr) {
-      gtk_label_set_text(GTK_LABEL(tr_res_area), "");
-   }
-
-   if (!do_rs) {
-      gtk_label_set_text(GTK_LABEL(rs_res_area), "");
-   }
+void Grapher::reload_expr(GraphMode mode) {
+   this->mode = mode;
 
    gtk_label_set_text(GTK_LABEL(err_area), "");
    bool all_parsed =
@@ -513,11 +504,18 @@ void Grapher::reload_expr(bool trace, bool rsum) {
          "Error: could not parse ymax.");
 
    if (all_parsed) {
-      if (do_rs) {
-         // Only include riemann sum if parsing those vars succeeds
-         do_rs = load_rs_vars();
-      } else if (do_tr) {
-         do_tr = load_xval();
+      switch (mode) {
+      case RSUM:
+         if (!load_rs_vars()) mode = PLAIN;
+         break;
+      case TRACE:
+         if (!load_xval())    mode = PLAIN;
+         break;
+      case MCARLO:
+         if (!load_mc_vars()) mode = PLAIN;
+         break;
+      case PLAIN:
+         break;
       }
 
       try {
@@ -617,7 +615,7 @@ void Grapher::make_settings() {
  * @param data The Grapher object
  */
 void load_expr_tr(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(true, false);
+   ((Grapher *)data)->reload_expr(TRACE);
 }
 
 /**
@@ -627,7 +625,18 @@ void load_expr_tr(GtkWidget *widget, gpointer data) {
  * @param data The Grapher object
  */
 void load_expr_rs(GtkWidget *widget, gpointer data) {
-   ((Grapher *)data)->reload_expr(false, true);
+   ((Grapher *)data)->reload_expr(RSUM);
+}
+
+
+/**
+ * Callback to reload expression and redraw graph with Monte Carlo view 
+ *
+ * @param widget The caller
+ * @param data The Grapher object
+ */
+void load_expr_mc(GtkWidget *widget, gpointer data) {
+   ((Grapher *)data)->reload_expr(MCARLO);
 }
 
 void Grapher::make_analysis() {
@@ -730,27 +739,37 @@ void Grapher::make_analysis() {
 
    mc_xmin_entry = gtk_entry_new();
    gtk_grid_attach(GTK_GRID(mc_grid), mc_xmin_entry, 1, 0, 1, 1);
+   g_signal_connect(G_OBJECT(mc_xmin_entry), "activate",
+                    G_CALLBACK(load_expr_mc), this);
 
    GtkWidget *mc_xmax_label = gtk_label_new("xmax: ");
    gtk_grid_attach(GTK_GRID(mc_grid), mc_xmax_label, 0, 1, 1, 1);
 
    mc_xmax_entry = gtk_entry_new();
    gtk_grid_attach(GTK_GRID(mc_grid), mc_xmax_entry, 1, 1, 1, 1);
+   g_signal_connect(G_OBJECT(mc_xmax_entry), "activate",
+                    G_CALLBACK(load_expr_mc), this);
 
    GtkWidget *mc_ymin_label = gtk_label_new("ymin: ");
    gtk_grid_attach(GTK_GRID(mc_grid), mc_ymin_label, 0, 2, 1, 1);
 
    mc_ymin_entry = gtk_entry_new();
    gtk_grid_attach(GTK_GRID(mc_grid), mc_ymin_entry, 1, 2, 1, 1);
+   g_signal_connect(G_OBJECT(mc_ymin_entry), "activate",
+                    G_CALLBACK(load_expr_mc), this);
 
    GtkWidget *mc_ymax_label = gtk_label_new("ymax: ");
    gtk_grid_attach(GTK_GRID(mc_grid), mc_ymax_label, 0, 3, 1, 1);
 
    mc_ymax_entry = gtk_entry_new();
    gtk_grid_attach(GTK_GRID(mc_grid), mc_ymax_entry, 1, 3, 1, 1);
+   g_signal_connect(G_OBJECT(mc_ymax_entry), "activate",
+                    G_CALLBACK(load_expr_mc), this);
 
    GtkWidget *approx_btn = gtk_button_new_with_label("Approximate");
    gtk_grid_attach(GTK_GRID(mc_grid), approx_btn, 0, 4, 2, 1);
+   g_signal_connect(G_OBJECT(approx_btn), "clicked",
+                    G_CALLBACK(load_expr_mc), this);
 
    GtkWidget *approx_label = gtk_label_new("Integral estimate:");
    gtk_grid_attach(GTK_GRID(mc_grid), approx_label, 0, 5, 2, 1);

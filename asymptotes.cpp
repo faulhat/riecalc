@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. 
  */
 
-#include "drawing.hpp"
+#include "asymptotes.hpp"
 #include <cmath>
 
 Point goes_pos_inf(Func fn, Point A, Point B, double xrange) {

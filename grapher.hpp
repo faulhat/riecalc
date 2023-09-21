@@ -22,6 +22,10 @@
 #include "compile.hpp"
 #include <gtk/gtk.h>
 
+enum GraphMode {
+   PLAIN, TRACE, RSUM, MCARLO
+};
+
 /* A class representing the graphing dialog. */
 class Grapher {
    /* The underlying Gtk object */
@@ -66,20 +70,14 @@ class Grapher {
 
    /* Monte Carlo input data */
    double mc_xmin, mc_xmax, mc_ymin, mc_ymax;
-   
+
    /* Objects used for the compilation of expressions. */
    const ExecCtx ectx;
    JitRuntime rt;
    Func fn;
 
-   /* Flag telling draw function to incorporate trace */
-   bool do_tr;
-
-   /* Flag telling draw function to incorporate Riemann sum */
-   bool do_rs;
-
-   /* Flag telling draw function to incorporate Monte Carlo */
-   bool do_mc;
+   /* Which analysis to do, if any */
+   GraphMode mode;
 
    /**
     * Loads x value for trace function
@@ -140,10 +138,9 @@ public:
    /**
     * Reloads expression from entry area
     *
-    * @param trace Whether or not to apply the trace function
-    * @param rsum Whether or not to take a Riemann sum
+    * @param mode What analysis to do (if any)
     */
-   void reload_expr(bool trace, bool rsum);
+   void reload_expr(GraphMode mode);
 
    /**
     * Runs the graphing program

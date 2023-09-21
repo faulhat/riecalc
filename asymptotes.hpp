@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. 
  */
 
-#ifndef DRAWING_HPP
-#define DRAWING_HPP
+#ifndef ASYMPTOTES_HPP
+#define ASYMPTOTES_HPP
 
 #include "compile.hpp"
 
