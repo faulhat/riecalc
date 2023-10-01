@@ -656,8 +656,8 @@ void load_expr_mc(GtkWidget *widget, gpointer data) {
    ((Grapher *)data)->reload_expr(MCARLO);
 }
 
-void Grapher::reload_expr(GraphMode mode) {
-   this->mode = mode;
+void Grapher::reload_expr(GraphMode _mode) {
+   mode = _mode;
 
    gtk_label_set_text(GTK_LABEL(err_area), "");
    bool all_parsed =
