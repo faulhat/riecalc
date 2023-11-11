@@ -26,20 +26,21 @@ int run_tests();
 void repl();
 
 int main(int argc, char **argv) {
-   static const char *name = "Riemann";
+   int   status;
+   char *g_argv[] = { NULL, NULL };
 
    if (argc > 1 && (strncmp(argv[1], "-t", 2) == 0 ||
                     strcmp(argv[1], "--test") == 0)) {
-      return run_tests();
-   } else if (argc > 1 && (strncmp(argv[1], "-g", 2) == 0 ||
-                           strcmp(argv[1], "--graph") == 0)) {
-      char *g_argv[] = { strdup(name) };
-      int status = Grapher().run(1, g_argv);
-
-      free(g_argv[0]);
-      return status;
-   } else {
+      status = run_tests();
+   } else if (argc > 1 && (strncmp(argv[1], "-r", 2) == 0 ||
+                           strcmp(argv[1], "--repl") == 0)) {
       repl();
-      return 0;
+      status = 0;
+   } else {
+      g_argv[0] = strdup("Riemann");
+      status = Grapher().run(1, g_argv);
+      free(g_argv[0]);
    }
+
+   return status;
 }

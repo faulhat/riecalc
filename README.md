@@ -13,10 +13,10 @@ make
 
 Then, to run the graphing calculator:
 ```
-./rcalc -g
+./rcalc
 ```
 
-To instead run a simple repl version of the calculator, exclude the `-g` flag. To run the test suite, use the `-t` flag.
+To instead run a simple repl version of the calculator, use the `-r` flag. To run the test suite, use the `-t` flag.
 
 ## Expression notation
 
