@@ -6,7 +6,7 @@
 
 To build `riemann` on your local system, just do:
 ```
-git clone https://github.com/faulhat/riemann
+git clone --recurse-submodules https://github.com/faulhat/riemann
 cd riemann
 make
 ```

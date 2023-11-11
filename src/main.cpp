@@ -27,7 +27,8 @@ void repl();
 
 int main(int argc, char **argv) {
    int   status;
-   char *g_argv[] = { NULL, NULL };
+   char  name[]   = "Riemann";
+   char *g_argv[] = { name, NULL };
 
    if (argc > 1 && (strncmp(argv[1], "-t", 2) == 0 ||
                     strcmp(argv[1], "--test") == 0)) {
@@ -37,9 +38,7 @@ int main(int argc, char **argv) {
       repl();
       status = 0;
    } else {
-      g_argv[0] = strdup("Riemann");
       status = Grapher().run(1, g_argv);
-      free(g_argv[0]);
    }
 
    return status;
